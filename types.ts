@@ -1,7 +1,9 @@
+
 export enum ViewState {
   WELCOME = 'WELCOME',
   REGISTER = 'REGISTER',
-  SERVER_SETUP = 'SERVER_SETUP'
+  SERVER_SETUP = 'SERVER_SETUP',
+  AI_GENERATOR = 'AI_GENERATOR'
 }
 
 export interface Member {
@@ -30,16 +32,24 @@ export interface Member {
   observacoes?: string;
 }
 
-// Added to fix error in services/geminiService.ts and components/ApiGenerator.tsx
 export interface GeneratedCode {
   title: string;
   code: string;
   explanation: string;
 }
 
-// Added to fix error in components/Dashboard.tsx
 export interface ServerMetric {
   label: string;
   value: string;
   status: 'good' | 'warning' | 'error';
+}
+
+export type LogType = 'info' | 'success' | 'error' | 'warning';
+
+export interface LogEntry {
+  id: string;
+  timestamp: Date;
+  type: LogType;
+  message: string;
+  details?: string;
 }

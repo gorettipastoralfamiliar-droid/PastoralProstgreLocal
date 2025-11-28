@@ -1,15 +1,20 @@
+
 import React, { useState } from 'react';
-import { Member } from '../types';
+import { Member, LogType } from '../types';
 
 interface RegistrationFormProps {
   onBack: () => void;
+  addLog: (type: LogType, message: string, details?: string) => void;
+  serverUrl: string; // Nova prop
 }
 
-export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBack }) => {
+export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBack, addLog, serverUrl }) => {
   const [loading, setLoading] = useState(false);
   const [cepLoading, setCepLoading] = useState(false);
   
-  // Initial state matching the DB schema
+  // URL agora vem via props (configurada no App.tsx)
+  const API_URL = serverUrl.replace(/\/$/, ''); // Remove barra final se houver
+
   const [formData, setFormData] = useState<Member>({
     nome_completo: '',
     login: '',
@@ -29,13 +34,12 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBack }) =>
     funcao: '',
     data_ingresso: new Date().toISOString().split('T')[0],
     observacoes: '',
-    foto: '' // Base64 string will go here
+    foto: '' 
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     
-    // Mask logic for CEP (optional strictly visual, but good for UX)
     if (name === 'cep') {
         const numbers = value.replace(/\D/g, '');
         setFormData(prev => ({ ...prev, [name]: numbers }));
@@ -44,7 +48,6 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBack }) =>
         }
         return;
     }
-
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
@@ -64,13 +67,21 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBack }) =>
     }
   };
 
-  const fetchAddress = async (cep: string) => {
+  const fetchAddress = async (cepInput: string) => {
+    if (!cepInput || cepInput.length !== 8) return;
     setCepLoading(true);
+    addLog('info', `Buscando CEP: ${cepInput}...`);
+
     try {
-      const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+      const response = await fetch(`https://viacep.com.br/ws/${cepInput}/json/`);
       const data = await response.json();
       
-      if (!data.erro) {
+      if (data.erro) {
+        addLog('warning', `CEP ${cepInput} não encontrado na base do ViaCEP.`);
+        alert("CEP não encontrado!");
+        setFormData(prev => ({ ...prev, logradouro: '', bairro: '', cidade: '', uf: '' }));
+      } else {
+        addLog('success', `CEP Encontrado: ${data.localidade}-${data.uf}`);
         setFormData(prev => ({
           ...prev,
           logradouro: data.logradouro,
@@ -78,34 +89,64 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBack }) =>
           cidade: data.localidade,
           uf: data.uf
         }));
-      } else {
-        // Optional: Notify user CEP not found
       }
     } catch (error) {
-      console.error("Erro ao buscar CEP", error);
+      addLog('error', `Falha ao conectar com ViaCEP`, String(error));
     } finally {
       setCepLoading(false);
     }
   };
 
+  const handleCepBlur = () => {
+      const cepLimpo = formData.cep.replace(/\D/g, '');
+      if (cepLimpo.length === 8) {
+          fetchAddress(cepLimpo);
+      }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
-    // This is where you would call your backend API
-    // const response = await fetch('http://YOUR_HOME_SERVER_IP:3000/api/membros', { ... })
+    addLog('info', 'Iniciando cadastro de agente...', `POST ${API_URL}/api/membros`);
     
-    setTimeout(() => {
-      setLoading(false);
-      alert("Simulação: Cadastro enviado com sucesso!\n\nVerifique a aba 'Configurar Servidor' (clique no logo da tela inicial) para pegar o código do backend.");
-      onBack();
-    }, 1500);
+    // Tenta conectar no backend configurado
+    try {
+        const response = await fetch(`${API_URL}/api/membros`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(formData)
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            addLog('success', 'Agente cadastrado com sucesso no servidor!', `ID: ${result.id}`);
+            alert('Cadastro realizado com sucesso!');
+            onBack();
+        } else {
+            throw new Error(result.details || 'Erro desconhecido no servidor');
+        }
+
+    } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        
+        // Mensagem amigável se for erro de conexão (fetch failed)
+        if (errorMsg.includes('Failed to fetch')) {
+            addLog('error', 'Falha na conexão com o Servidor', `Verifique se o backend está rodando em ${API_URL}`);
+            alert(`Não foi possível conectar ao servidor (${API_URL}).\n\n1. Verifique se o IP está correto na tela de Configuração.\n2. Verifique se o Firewall do Windows liberou a porta 3000.`);
+        } else {
+            addLog('error', 'O servidor recusou o cadastro', errorMsg);
+            alert(`Erro no cadastro: ${errorMsg}`);
+        }
+    } finally {
+        setLoading(false);
+    }
   };
 
   return (
     <div className="p-6 pb-24 animate-fade-in relative text-slate-100">
       
-      {/* Navbarish header */}
+      {/* Header */}
       <div className="flex items-center gap-4 mb-8">
         <button onClick={onBack} className="p-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur text-white transition-all">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
@@ -115,12 +156,11 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBack }) =>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         
-        {/* Responsive Grid Layout: On Mobile 1 col, on Desktop 2 cols gap */}
+        {/* Responsive Grid Layout */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
 
-            {/* Left Column: Photo & Personal Data */}
+            {/* Left Column: Personal Data */}
             <div className="md:col-span-8 space-y-6">
-                 {/* Section: Basic Info */}
                 <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6 space-y-4">
                     <h3 className="text-sm font-semibold text-blue-300 uppercase tracking-wider mb-2 flex items-center gap-2">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
@@ -128,7 +168,6 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBack }) =>
                     </h3>
                     
                     <div className="flex flex-col md:flex-row gap-6">
-                         {/* Photo Uploader */}
                         <div className="flex-shrink-0 flex justify-center md:justify-start">
                             <div className="relative group cursor-pointer">
                                 <div className="w-28 h-28 rounded-2xl bg-slate-800/50 border-2 border-dashed border-blue-400/50 flex items-center justify-center overflow-hidden transition-all group-hover:border-blue-400">
@@ -137,7 +176,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBack }) =>
                                 ) : (
                                     <div className="text-center p-2">
                                         <svg className="w-8 h-8 text-blue-400/50 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                                        <span className="text-[10px] text-blue-300/50">Adicionar Foto</span>
+                                        <span className="text-[10px] text-blue-300/50">Foto</span>
                                     </div>
                                 )}
                                 </div>
@@ -145,7 +184,6 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBack }) =>
                             </div>
                         </div>
 
-                        {/* Name & Login Fields */}
                         <div className="flex-1 space-y-4">
                             <InputField label="Nome Completo" name="nome_completo" value={formData.nome_completo} onChange={handleChange} required />
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -158,7 +196,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBack }) =>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <InputField label="Nascimento" type="date" name="data_nascimento" value={formData.data_nascimento} onChange={handleChange} required />
                         <SelectField label="Estado Civil" name="estado_civil" value={formData.estado_civil} onChange={handleChange} options={['Solteiro(a)', 'Casado(a)', 'Viúvo(a)', 'Separado(a)']} />
-                        <InputField label="Telefone / WhatsApp" name="telefone" value={formData.telefone} onChange={handleChange} placeholder="(XX) 9XXXX-XXXX" required />
+                        <InputField label="Telefone" name="telefone" value={formData.telefone} onChange={handleChange} placeholder="(XX) 9XXXX-XXXX" required />
                     </div>
 
                     {formData.estado_civil === 'Casado(a)' && (
@@ -169,48 +207,60 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBack }) =>
                     )}
                 </div>
 
-                {/* Section: Address (ViaCEP) */}
-                <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6 space-y-4 relative overflow-hidden">
-                     {/* Loading Indicator for ViaCEP */}
+                <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6 space-y-4 relative overflow-hidden transition-all">
                      {cepLoading && (
-                         <div className="absolute top-0 right-0 p-4">
-                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-400"></div>
+                         <div className="absolute inset-0 z-10 bg-black/40 backdrop-blur-sm flex items-center justify-center rounded-2xl">
+                             <div className="flex items-center gap-3">
+                                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-400"></div>
+                                 <span className="text-sm font-medium text-blue-200">Buscando endereço...</span>
+                             </div>
                          </div>
                      )}
+
                     <h3 className="text-sm font-semibold text-blue-300 uppercase tracking-wider mb-2 flex items-center gap-2">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                         Endereço
                     </h3>
                     
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                         <div className="md:col-span-1">
-                            <InputField 
-                                label="CEP" 
-                                name="cep" 
-                                value={formData.cep} 
-                                onChange={handleChange} 
-                                required 
-                                placeholder="00000000"
-                                maxLength={8}
-                            />
+                         <div className="md:col-span-1 relative">
+                            <label className="text-xs text-blue-200 ml-1 block font-medium">CEP</label>
+                            <div className="relative flex items-center">
+                                <input 
+                                    name="cep" 
+                                    value={formData.cep} 
+                                    onChange={handleChange}
+                                    onBlur={handleCepBlur}
+                                    required 
+                                    placeholder="00000000" 
+                                    maxLength={8} 
+                                    className="w-full bg-black/20 border border-white/10 rounded-lg pl-4 pr-10 py-3 text-white placeholder-white/20 focus:outline-none focus:border-blue-400 transition-all text-sm"
+                                />
+                                <button 
+                                    type="button"
+                                    onClick={() => fetchAddress(formData.cep.replace(/\D/g, ''))}
+                                    className="absolute right-2 p-1.5 text-blue-300 hover:text-white bg-white/10 hover:bg-white/20 rounded-md transition-colors"
+                                    title="Buscar Endereço"
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                                </button>
+                            </div>
                          </div>
                          <div className="md:col-span-3">
-                            <InputField label="Logradouro" name="logradouro" value={formData.logradouro} onChange={handleChange} required />
+                            <InputField label="Logradouro" name="logradouro" value={formData.logradouro} onChange={handleChange} required disabled={cepLoading} />
                          </div>
                     </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <InputField label="Bairro" name="bairro" value={formData.bairro} onChange={handleChange} required />
-                        <InputField label="Cidade" name="cidade" value={formData.cidade} onChange={handleChange} required />
-                        <InputField label="UF" name="uf" value={formData.uf} onChange={handleChange} required maxLength={2} placeholder="SP" />
+                        <InputField label="Bairro" name="bairro" value={formData.bairro} onChange={handleChange} required disabled={cepLoading} />
+                        <InputField label="Cidade" name="cidade" value={formData.cidade} onChange={handleChange} required disabled={cepLoading} />
+                        <InputField label="UF" name="uf" value={formData.uf} onChange={handleChange} required maxLength={2} disabled={cepLoading} />
                     </div>
                 </div>
             </div>
 
-            {/* Right Column: Church Info & Other */}
+            {/* Right Column: Pastoral Info */}
             <div className="md:col-span-4 space-y-6">
-                
-                 {/* Section: Pastoral Details */}
                 <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6 space-y-4">
                     <h3 className="text-sm font-semibold text-blue-300 uppercase tracking-wider mb-2 flex items-center gap-2">
                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
@@ -241,7 +291,6 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBack }) =>
                     <InputField label="Data de Ingresso" type="date" name="data_ingresso" value={formData.data_ingresso} onChange={handleChange} required />
                 </div>
 
-                {/* Section: Additional Info */}
                 <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6 space-y-4">
                     <h3 className="text-sm font-semibold text-blue-300 uppercase tracking-wider mb-2 flex items-center gap-2">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
@@ -272,7 +321,6 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBack }) =>
                     </div>
                 </div>
 
-                {/* Submit Button */}
                 <button
                 type="submit"
                 disabled={loading}
@@ -293,12 +341,11 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBack }) =>
   );
 };
 
-// Reusable Helper Components for the form
 const InputField = ({ label, className, ...props }: React.InputHTMLAttributes<HTMLInputElement> & { label: string }) => (
   <div className={`space-y-1 ${className}`}>
     <label className="text-xs text-blue-200 ml-1 block font-medium">{label}</label>
     <input 
-      className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-white/20 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400/50 transition-all text-sm"
+      className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-white/20 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400/50 transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed"
       {...props}
     />
   </div>

@@ -11,11 +11,18 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onNavigate }) => {
       
       {/* Logo Area */}
       <div className="mb-8 relative group cursor-pointer" onClick={() => onNavigate(ViewState.SERVER_SETUP)}>
-        <div className="w-28 h-28 rounded-full bg-white/10 backdrop-blur-md border border-white/30 flex items-center justify-center shadow-[0_0_30px_rgba(59,130,246,0.5)] transition-transform hover:scale-105">
-           {/* Placeholder for Pastoral Logo - Using an Icon for now */}
-           <svg className="w-16 h-16 text-white drop-shadow-lg" fill="currentColor" viewBox="0 0 24 24">
-             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
-           </svg>
+        <div className="w-32 h-32 rounded-full bg-white backdrop-blur-md border-4 border-white/30 flex items-center justify-center shadow-[0_0_40px_rgba(59,130,246,0.5)] transition-transform hover:scale-105 overflow-hidden p-1">
+           {/* Logo Oficial da Pastoral Familiar */}
+           <img 
+             src="https://upload.wikimedia.org/wikipedia/commons/e/ee/Logo_Pastoral_Familiar.png" 
+             alt="Pastoral Familiar Logo" 
+             className="w-full h-full object-contain"
+             onError={(e) => {
+               // Fallback if image fails
+               e.currentTarget.style.display = 'none';
+               e.currentTarget.parentElement!.innerHTML = '<svg class="w-16 h-16 text-blue-600" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>';
+             }}
+           />
         </div>
         {/* Hidden hint for backend setup */}
         <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity text-[10px] text-blue-300 whitespace-nowrap bg-black/50 px-2 py-1 rounded">
