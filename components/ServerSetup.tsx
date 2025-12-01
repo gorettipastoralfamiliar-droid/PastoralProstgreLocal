@@ -34,27 +34,40 @@ export const ServerSetup: React.FC<ServerSetupProps> = ({ onBack, onNavigateToAI
       
       try {
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
+          const timeoutId = setTimeout(() => controller.abort(), 8000); // 8s timeout
           
           const response = await fetch(`${urlToTest}/`, { 
               signal: controller.signal,
-              mode: 'cors' 
+              mode: 'cors',
+              headers: {
+                  'Content-Type': 'application/json',
+                  'ngrok-skip-browser-warning': 'true', // Bypass Ngrok page
+                  'Bypass-Tunnel-Reminder': 'true'
+              }
           });
           clearTimeout(timeoutId);
 
+          const text = await response.text();
+          addLog('info', `Response Status: ${response.status}`, `Body Preview: ${text.substring(0, 100)}`);
+          
           if (response.ok) {
-              const text = await response.text();
-              addLog('success', 'Conexão Estabelecida!', `Resposta: ${text}`);
-              alert("Sucesso! Conexão estabelecida com o servidor.");
+              // Verifica se o retorno é o HTML do Ngrok ou a resposta da API
+              if (text.trim().startsWith('<!DOCTYPE html>') || text.includes('ngrok-free.dev')) {
+                  addLog('warning', 'Aviso do Ngrok detectado', 'A conexão chegou no Ngrok, mas ele exibiu a tela de aviso. Verifique se o backend (server.js) foi atualizado para aceitar os headers de bypass.');
+                  alert("Conexão parcial!\n\nO link funciona, mas o Ngrok exibiu uma tela de aviso.\nCertifique-se de ter atualizado o 'server.js' com o código da Aba 3.");
+              } else {
+                  addLog('success', 'Conexão Estabelecida!', `Resposta: ${text.substring(0, 50)}...`);
+                  alert("Sucesso! Conexão estabelecida com o servidor.");
+              }
           } else {
-              addLog('warning', 'Servidor encontrado, mas retornou erro.', `Status: ${response.status}`);
+              addLog('warning', 'Servidor encontrado, mas retornou erro.', `Status: ${response.status} - Body: ${text}`);
           }
       } catch (error) {
            const err = error instanceof Error ? error.message : String(error);
            if (err.includes('aborted')) {
                addLog('error', 'Timeout: Servidor demorou para responder.', `Verifique o IP ${urlToTest} e a porta 3000.`);
            } else if (err.includes('Failed to fetch')) {
-               addLog('error', 'Bloqueio de Rede ou CORS.', `O navegador bloqueou a conexão. Atualize o código do server.js (aba 3) e reinicie o Node.`);
+               addLog('error', 'Bloqueio de CORS/Rede', `O navegador bloqueou a conexão. Isso geralmente acontece se o server.js não permitir o header 'ngrok-skip-browser-warning'. Atualize o código na Aba 3.`);
            } else {
                addLog('error', 'Falha na conexão.', err);
            }
@@ -103,7 +116,7 @@ CREATE TABLE IF NOT EXISTS membros (
 `;
 
   const nodeCode = `
-// server.js - Backend Atualizado para Pastoral (v2 - Sem CORS Lib)
+// server.js - Backend Atualizado v4 (Ngrok + CORS Headers Fix)
 // Instale: npm install express pg dotenv
 
 require('dotenv').config();
@@ -113,14 +126,14 @@ const { Pool } = require('pg');
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Configuração Manual de Headers (Mais robusto que cors lib para IP Local)
+// Middleware CORS Robusto
+// Permite Ngrok e Headers de Bypass
 app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "*"); // Permite qualquer origem (Frontend)
+  res.header("Access-Control-Allow-Origin", "*"); // Em produção, mude * para seu domínio
   res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, Access-Control-Allow-Private-Network");
-  res.header("Access-Control-Allow-Private-Network", "true"); // CRÍTICO para Chrome/Edge
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, Access-Control-Allow-Private-Network, ngrok-skip-browser-warning, Bypass-Tunnel-Reminder, User-Agent");
+  res.header("Access-Control-Allow-Private-Network", "true");
   
-  // Responder IMEDIATAMENTE ao Preflight (OPTIONS)
   if (req.method === 'OPTIONS') {
     return res.sendStatus(200);
   }
@@ -129,7 +142,7 @@ app.use((req, res, next) => {
 
 app.use(express.json({ limit: '10mb' }));
 
-// Conexão com Banco de Dados Doméstico
+// Conexão com Banco de Dados
 const pool = new Pool({
   user: process.env.DB_USER || 'postgres',
   host: process.env.DB_HOST || 'localhost',
@@ -138,20 +151,20 @@ const pool = new Pool({
   port: process.env.DB_PORT || 5432,
 });
 
-// GET: Rota de Teste Simples
-app.get('/', (req, res) => res.send('API Pastoral Online ✝️'));
+// Rota Raiz (Teste)
+app.get('/', (req, res) => {
+  res.json({ message: 'API Pastoral Online ✝️', status: 'OK' });
+});
 
-// POST: Verificar Login (Para Desafio de Data)
+// Login Challenge
 app.post('/api/membros/check-login', async (req, res) => {
   const client = await pool.connect();
   try {
     const { login } = req.body;
-    // Busca ignorando case sensitive
     const result = await client.query('SELECT * FROM membros WHERE upper(login) = upper($1)', [login]);
     
     if (result.rows.length > 0) {
       const u = result.rows[0];
-      // Retorna apenas dados necessários para o desafio
       res.json({ 
         found: true, 
         nome_completo: u.nome_completo,
@@ -170,25 +183,27 @@ app.post('/api/membros/check-login', async (req, res) => {
   }
 });
 
-// GET: Listar Agentes
+// Listar Agentes (GET)
+// Se não funcionar, verifique se seu browser não está bloqueando
 app.get('/api/membros', async (req, res) => {
   const client = await pool.connect();
   try {
+    // Busca todos, ordenados por data de criação
     const result = await client.query('SELECT * FROM membros ORDER BY created_at DESC');
     res.json(result.rows);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: err.message });
   } finally {
     client.release();
   }
 });
 
-// POST: Criar novo Agente
+// Criar Agente (POST)
 app.post('/api/membros', async (req, res) => {
   const client = await pool.connect();
   try {
     const data = req.body;
-    
     const query = \`
       INSERT INTO membros (
         foto, nome_completo, login, data_nascimento, estado_civil,
@@ -202,7 +217,6 @@ app.post('/api/membros', async (req, res) => {
         $21, $22
       ) RETURNING id;
     \`;
-
     const values = [
       data.foto, data.nome_completo, data.login, data.data_nascimento, data.estado_civil,
       data.nome_conjuge, data.data_casamento || null, data.telefone, data.email, data.cep,
@@ -210,22 +224,18 @@ app.post('/api/membros', async (req, res) => {
       data.modelo_veiculo, data.paroquia, data.comunidade, data.setor, data.funcao,
       data.data_ingresso, data.observacoes
     ];
-
     const result = await client.query(query, values);
     res.status(201).json({ success: true, id: result.rows[0].id });
-
   } catch (err) {
-    console.error('Erro ao cadastrar agente:', err);
+    console.error(err);
     res.status(500).json({ error: 'Erro interno', details: err.message });
   } finally {
     client.release();
   }
 });
 
-// Escuta em todas as interfaces (0.0.0.0)
 app.listen(port, '0.0.0.0', () => {
-  console.log(\`Servidor rodando na porta \${port}\`);
-  console.log(\`Acesse: http://\${require('os').hostname()}:\${port}\`);
+  console.log(\`Servidor Pastoral rodando na porta \${port}\`);
 });
 `;
 
@@ -254,8 +264,8 @@ app.listen(port, '0.0.0.0', () => {
             <div className="bg-orange-500/20 border border-orange-500/50 p-3 rounded text-orange-200 text-xs flex items-start gap-2">
                 <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
                 <div>
-                    <strong>Atenção (Mixed Content):</strong> Você está acessando este site via <strong>HTTPS</strong>, mas tentando conectar num servidor <strong>HTTP</strong>. O navegador bloqueará isso por segurança.
-                    <br/>Solução: Instale o Ngrok (aba 4) ou acesse via localhost.
+                    <strong>Atenção (Mixed Content):</strong> Você está acessando via HTTPS, mas o servidor é HTTP.
+                    <br/>Solução: Use o Ngrok (aba 4) ou acesse localmente.
                 </div>
             </div>
         )}
@@ -371,20 +381,16 @@ app.listen(port, '0.0.0.0', () => {
                     {/* TROUBLESHOOTING SECTION */}
                     <div className="bg-red-900/10 border border-red-500/20 p-4 rounded-lg">
                         <h3 className="text-red-300 font-bold text-lg mb-2 flex items-center gap-2">
-                           ⚠️ Problemas de Conexão? Leia aqui.
+                           ⚠️ IMPORTANTE: Atualize o Servidor
                         </h3>
-                        <p className="mb-2">Se o "Teste de Conexão" falhou, verifique:</p>
-                        <ul className="list-disc pl-5 space-y-2">
-                            <li>
-                                <strong className="text-white">IP Incorreto:</strong> Seu roteador pode ter mudado o IP. Use <code className="text-green-300">ipconfig</code>.
-                            </li>
-                             <li>
-                                <strong className="text-white">Código Node.js:</strong> Atualize o <code className="text-green-300">server.js</code> com o código da aba 3 (Versão 2).
-                            </li>
-                            <li>
-                                <strong className="text-white">Vercel/HTTPS:</strong> Se este site está com cadeado (HTTPS), você não pode acessar IP local (HTTP) diretamente sem usar Ngrok (Aba 4).
-                            </li>
-                        </ul>
+                        <p className="mb-2">Para que o aplicativo funcione com Ngrok e não dê erro de "Failed to fetch", você DEVE atualizar o backend:</p>
+                        <ol className="list-decimal pl-5 space-y-2 text-white">
+                            <li>Vá na aba <strong>3. Node.js API</strong>.</li>
+                            <li>Copie o código novo (v4).</li>
+                            <li>No seu computador, abra o arquivo <code className="text-green-300">server.js</code>.</li>
+                            <li>Substitua tudo pelo código novo e salve.</li>
+                            <li>Reinicie o servidor (<code className="text-green-300">Ctrl+C</code> e depois <code className="text-green-300">node server.js</code>).</li>
+                        </ol>
                     </div>
 
                     <div className="space-y-3">

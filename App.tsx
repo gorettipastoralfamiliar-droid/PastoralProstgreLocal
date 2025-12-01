@@ -111,6 +111,7 @@ const App: React.FC = () => {
                     serverUrl={serverUrl} 
                     onLogout={() => { setCurrentUser(null); setCurrentView(ViewState.WELCOME); }}
                     onNavigate={handleNavigation}
+                    addLog={addLog}
                 />
             </div>
         );

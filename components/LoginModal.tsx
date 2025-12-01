@@ -36,9 +36,20 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onSucce
       const response = await fetch(`${API_URL}/api/membros/check-login`, {
         method: 'POST',
         mode: 'cors',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+            'Content-Type': 'application/json',
+            'ngrok-skip-browser-warning': 'true', // Pula aviso do Ngrok
+            'Bypass-Tunnel-Reminder': 'true'
+        },
         body: JSON.stringify({ login: login.toUpperCase() }) // Force Upper
       });
+
+      // Verifica se a resposta é JSON antes de parsear
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+          // Se não for JSON, provavelmente é o HTML de erro do Ngrok (apesar do bypass) ou erro 500
+          throw new Error("O servidor não retornou JSON. Verifique se a URL está correta ou se o backend foi atualizado.");
+      }
 
       const data = await response.json();
 
@@ -50,7 +61,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onSucce
         setError('Login não encontrado.');
       }
     } catch (err) {
-      setError('Erro de conexão com o servidor.');
+      console.error(err);
+      setError('Erro de conexão ou Login inválido.');
     } finally {
       setLoading(false);
     }

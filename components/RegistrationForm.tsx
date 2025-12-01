@@ -114,27 +114,36 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBack, addL
         const response = await fetch(`${API_URL}/api/membros`, {
             method: 'POST',
             mode: 'cors', // Explicitar CORS
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                'ngrok-skip-browser-warning': 'true', // Bypass Ngrok warning page
+                'Bypass-Tunnel-Reminder': 'true'
+            },
             body: JSON.stringify(formData)
         });
 
-        const result = await response.json();
+        const text = await response.text();
 
         if (response.ok) {
-            addLog('success', 'Agente cadastrado com sucesso no servidor!', `ID: ${result.id}`);
+            let result;
+            try {
+                result = JSON.parse(text);
+            } catch (e) {
+                // Ignore parsing error if ok but not json, though API should return json
+            }
+            addLog('success', 'Agente cadastrado com sucesso!', `Resposta Server: ${text.substring(0,50)}...`);
             alert('Cadastro realizado com sucesso!');
             onBack();
         } else {
-            throw new Error(result.details || 'Erro desconhecido no servidor');
+            throw new Error(`Status ${response.status}: ${text}`);
         }
 
     } catch (error) {
         const errorMsg = error instanceof Error ? error.message : String(error);
         
-        // Mensagem amigável se for erro de conexão (fetch failed)
-        if (errorMsg.includes('Failed to fetch')) {
-            addLog('error', 'Bloqueio de CORS ou Rede', `Verifique se você atualizou o server.js com o código novo na aba Servidor.`);
-            alert(`Falha de Conexão Segura.\n\nO navegador bloqueou o acesso ao IP Local.\nPor favor, vá na aba 'Servidor' > 'Node.js API', copie o código novo e atualize seu servidor.`);
+        if (errorMsg.includes('Failed to fetch') || errorMsg.includes('JSON')) {
+            addLog('error', 'Bloqueio de CORS ou Rede', `Verifique se o backend aceita o header 'ngrok-skip-browser-warning'.`);
+            alert(`Falha de Conexão.\n\nDetalhes no Terminal de Logs.`);
         } else {
             addLog('error', 'O servidor recusou o cadastro', errorMsg);
             alert(`Erro no cadastro: ${errorMsg}`);
