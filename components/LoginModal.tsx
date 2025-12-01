@@ -88,6 +88,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onSucce
     const [y, m, d] = cleanDateStr.split('-').map(Number);
     // Note: Month in JS Date is 0-indexed (0=Jan, 11=Dec)
     const baseDateObj = new Date(y, m - 1, d);
+    const today = new Date();
 
     const correctFmt = formatDateBR(baseDateObj);
     setCorrectAnswer(correctFmt);
@@ -98,30 +99,43 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onSucce
     // Generate 3 unique wrong options with high entropy
     while (opts.size < 4) {
       const variant = new Date(baseDateObj);
-      const rand = Math.random();
+      const r = Math.random();
       
-      if (rand < 0.25) {
-        // Variação Simples: Muda apenas o Ano (erro comum)
-        // +/- 1 a 5 anos
-        const diff = Math.floor(Math.random() * 5) + 1;
-        variant.setFullYear(variant.getFullYear() + (Math.random() > 0.5 ? diff : -diff));
+      if (r < 0.40) {
+        // ESTRATÉGIA 1: Variação Grande de Ano (Hard Mode)
+        // Varia entre -15 e +15 anos
+        let yearOffset = Math.floor(Math.random() * 31) - 15;
+        if (yearOffset === 0) yearOffset = 1;
+        
+        variant.setFullYear(variant.getFullYear() + yearOffset);
+        // Também muda o mês para não ficar óbvio se a pessoa souber só o dia
+        variant.setMonth(Math.floor(Math.random() * 12));
       } 
-      else if (rand < 0.50) {
-        // Variação Média: Muda Ano e Mês
-        const yearDiff = Math.floor(Math.random() * 10) - 5; // -5 a +5 anos
-        const monthDiff = Math.floor(Math.random() * 6) + 1; // 1 a 6 meses
-        variant.setFullYear(variant.getFullYear() + yearDiff);
-        variant.setMonth(variant.getMonth() + (Math.random() > 0.5 ? monthDiff : -monthDiff));
-      } 
-      else if (rand < 0.75) {
-        // Variação Sutil: Muda apenas o dia e mês próximo
-        variant.setMonth(variant.getMonth() + (Math.random() > 0.5 ? 1 : -1));
+      else if (r < 0.70) {
+        // ESTRATÉGIA 2: Mesmo Ano, Mês/Dia Diferente (Teste de memória exata)
+        // Mantém o ano, muda o mês e o dia drasticamente
+        variant.setMonth(Math.floor(Math.random() * 12));
         variant.setDate(Math.floor(Math.random() * 28) + 1);
+      } 
+      else if (r < 0.85) {
+        // ESTRATÉGIA 3: Pegadinha da Década
+        // Soma ou Subtrai exatamente 10 ou 20 anos
+        const decades = [-20, -10, 10, 20];
+        const decadeOffset = decades[Math.floor(Math.random() * decades.length)];
+        variant.setFullYear(variant.getFullYear() + decadeOffset);
       }
       else {
-        // Caos Total: Muda tudo
-        variant.setFullYear(variant.getFullYear() + Math.floor(Math.random() * 20) - 10);
-        variant.setDate(Math.floor(Math.random() * 28) + 1);
+        // ESTRATÉGIA 4: Variação Sutil (Perto da data)
+        // +/- 1 ou 2 anos apenas, mas muda o dia
+        let smallOffset = Math.floor(Math.random() * 5) - 2; 
+        if (smallOffset === 0) smallOffset = -1;
+        variant.setFullYear(variant.getFullYear() + smallOffset);
+        variant.setDate(variant.getDate() + (Math.random() > 0.5 ? 5 : -5));
+      }
+
+      // Segurança: Se a data gerada for no futuro (ex: nasceu em 2026), volta para o passado
+      if (variant > today) {
+          variant.setFullYear(variant.getFullYear() - 20);
       }
       
       const fmt = formatDateBR(variant);
