@@ -113,6 +113,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBack, addL
     try {
         const response = await fetch(`${API_URL}/api/membros`, {
             method: 'POST',
+            mode: 'cors', // Explicitar CORS
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(formData)
         });
@@ -132,8 +133,8 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBack, addL
         
         // Mensagem amigável se for erro de conexão (fetch failed)
         if (errorMsg.includes('Failed to fetch')) {
-            addLog('error', 'Falha na conexão com o Servidor', `Verifique se o backend está rodando em ${API_URL}`);
-            alert(`Não foi possível conectar ao servidor (${API_URL}).\n\n1. Verifique se o IP está correto na tela de Configuração.\n2. Verifique se o Firewall do Windows liberou a porta 3000.`);
+            addLog('error', 'Bloqueio de CORS ou Rede', `Verifique se você atualizou o server.js com o código novo na aba Servidor.`);
+            alert(`Falha de Conexão Segura.\n\nO navegador bloqueou o acesso ao IP Local.\nPor favor, vá na aba 'Servidor' > 'Node.js API', copie o código novo e atualize seu servidor.`);
         } else {
             addLog('error', 'O servidor recusou o cadastro', errorMsg);
             alert(`Erro no cadastro: ${errorMsg}`);

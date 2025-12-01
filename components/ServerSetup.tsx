@@ -17,6 +17,10 @@ export const ServerSetup: React.FC<ServerSetupProps> = ({ onBack, onNavigateToAI
   const [isEditingUrl, setIsEditingUrl] = useState(false);
   const [tempUrl, setTempUrl] = useState(serverUrl);
 
+  const isHttps = window.location.protocol === 'https:';
+  const targetIsHttp = tempUrl.startsWith('http:');
+  const showMixedContentWarning = isHttps && targetIsHttp;
+
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     setCopied(true);
@@ -30,10 +34,11 @@ export const ServerSetup: React.FC<ServerSetupProps> = ({ onBack, onNavigateToAI
       
       try {
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 3000); // 3s timeout
+          const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
           
           const response = await fetch(`${urlToTest}/`, { 
-              signal: controller.signal 
+              signal: controller.signal,
+              mode: 'cors' 
           });
           clearTimeout(timeoutId);
 
@@ -48,8 +53,10 @@ export const ServerSetup: React.FC<ServerSetupProps> = ({ onBack, onNavigateToAI
            const err = error instanceof Error ? error.message : String(error);
            if (err.includes('aborted')) {
                addLog('error', 'Timeout: Servidor demorou para responder.', `Verifique o IP ${urlToTest} e a porta 3000.`);
+           } else if (err.includes('Failed to fetch')) {
+               addLog('error', 'Bloqueio de Rede ou CORS.', `O navegador bloqueou a conexão. Atualize o código do server.js (aba 3) e reinicie o Node.`);
            } else {
-               addLog('error', 'Falha na conexão.', `O servidor parece inacessível em ${urlToTest}. Veja a aba "Passo a Passo" para liberar o Firewall.`);
+               addLog('error', 'Falha na conexão.', err);
            }
       } finally {
           setTesting(false);
@@ -96,8 +103,8 @@ CREATE TABLE IF NOT EXISTS membros (
 `;
 
   const nodeCode = `
-// server.js - Backend para Cadastro de Agentes
-// Dependências: npm install express pg cors helmet dotenv
+// server.js - Backend Atualizado para Pastoral
+// Instale: npm install express pg cors helmet dotenv
 
 require('dotenv').config();
 const express = require('express');
@@ -108,6 +115,23 @@ const helmet = require('helmet');
 const app = express();
 const port = process.env.PORT || 3000;
 
+// Configuração CRÍTICA para funcionar em Rede Local (CORS + Private Network)
+app.use(cors({
+  origin: '*', // Em produção, restrinja para a URL do seu site
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Access-Control-Allow-Private-Network'],
+  credentials: true
+}));
+
+// Middleware extra para permitir acesso de IP privado (Chrome/Edge update)
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Private-Network", "true");
+  next();
+});
+
+app.use(helmet());
+app.use(express.json({ limit: '10mb' }));
+
 // Conexão com Banco de Dados Doméstico
 const pool = new Pool({
   user: process.env.DB_USER || 'postgres',
@@ -117,10 +141,21 @@ const pool = new Pool({
   port: process.env.DB_PORT || 5432,
 });
 
-app.use(helmet());
-// IMPORTANTE: Permitir acesso de qualquer origem
-app.use(cors()); 
-app.use(express.json({ limit: '10mb' }));
+// GET: Rota de Teste Simples
+app.get('/', (req, res) => res.send('API Pastoral Online ✝️'));
+
+// GET: Listar Agentes
+app.get('/api/membros', async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const result = await client.query('SELECT * FROM membros ORDER BY created_at DESC');
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  } finally {
+    client.release();
+  }
+});
 
 // POST: Criar novo Agente
 app.post('/api/membros', async (req, res) => {
@@ -161,11 +196,10 @@ app.post('/api/membros', async (req, res) => {
   }
 });
 
-app.get('/', (req, res) => res.send('API Pastoral Online ✝️'));
-
-// Escuta em todas as interfaces (0.0.0.0) para que outros PCs na rede consigam acessar
+// Escuta em todas as interfaces (0.0.0.0)
 app.listen(port, '0.0.0.0', () => {
   console.log(\`Servidor rodando na porta \${port}\`);
+  console.log(\`Acesse: http://\${require('os').hostname()}:\${port}\`);
 });
 `;
 
@@ -188,55 +222,68 @@ app.listen(port, '0.0.0.0', () => {
       </div>
 
       {/* Server Config Bar */}
-      <div className="bg-blue-900/30 border border-blue-500/30 rounded-xl p-4 mb-6 flex flex-col md:flex-row items-center gap-4">
-        <div className="flex items-center gap-3 w-full md:w-auto">
-             <div className="p-2 bg-blue-500/20 rounded-full">
-                <svg className="w-5 h-5 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 01-2 2v4a2 2 0 012 2h14a2 2 0 012-2v-4a2 2 0 01-2-2m-2-4h.01M17 16h.01" /></svg>
-             </div>
-             <div className="flex-1">
-                <label className="text-[10px] text-blue-300 uppercase font-bold tracking-wider block">Endereço do Servidor (API)</label>
-                {isEditingUrl ? (
-                    <div className="flex items-center gap-2 mt-1">
-                        <input 
-                            type="text" 
-                            value={tempUrl} 
-                            onChange={(e) => setTempUrl(e.target.value)} 
-                            className="bg-black/40 border border-blue-400 rounded px-2 py-1 text-sm text-white focus:outline-none w-full md:w-64"
-                        />
-                        <button onClick={handleSaveUrl} className="text-xs bg-green-600 hover:bg-green-500 text-white px-2 py-1 rounded">Salvar</button>
-                        <button onClick={() => { setTempUrl(serverUrl); setIsEditingUrl(false); }} className="text-xs bg-slate-700 hover:bg-slate-600 text-white px-2 py-1 rounded">Cancelar</button>
-                    </div>
-                ) : (
-                    <div className="flex items-center gap-2 mt-1">
-                        <span className="font-mono text-lg font-bold text-white">{serverUrl}</span>
-                        <button onClick={() => setIsEditingUrl(true)} className="text-xs text-slate-400 hover:text-white" title="Editar IP">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-                        </button>
-                    </div>
-                )}
-             </div>
-        </div>
+      <div className="bg-blue-900/30 border border-blue-500/30 rounded-xl p-4 mb-6 flex flex-col gap-4">
         
-        <div className="h-8 w-[1px] bg-white/10 hidden md:block" />
+        {showMixedContentWarning && (
+            <div className="bg-orange-500/20 border border-orange-500/50 p-3 rounded text-orange-200 text-xs flex items-start gap-2">
+                <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                <div>
+                    <strong>Atenção (Mixed Content):</strong> Você está acessando este site via <strong>HTTPS</strong>, mas tentando conectar num servidor <strong>HTTP</strong>. O navegador bloqueará isso por segurança.
+                    <br/>Solução: Acesse este site via HTTP (se for local) ou instale um túnel seguro (Cloudflare) no seu servidor.
+                </div>
+            </div>
+        )}
 
-        <div className="flex-1 w-full md:w-auto flex justify-end">
-            <button 
-                onClick={handleTestConnection}
-                disabled={testing}
-                className={`w-full md:w-auto text-sm px-4 py-2 rounded-lg border transition-all flex items-center justify-center gap-2 font-semibold shadow-lg ${testing ? 'bg-yellow-500/20 border-yellow-500 text-yellow-200' : 'bg-green-500 hover:bg-green-400 text-white border-green-500/50'}`}
-            >
-                {testing ? (
-                    <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-200"></div>
-                        Verificando...
-                    </>
-                ) : (
-                    <>
-                        Testar Conexão
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
-                    </>
-                )}
-            </button>
+        <div className="flex flex-col md:flex-row items-center gap-4">
+            <div className="flex items-center gap-3 w-full md:w-auto">
+                <div className="p-2 bg-blue-500/20 rounded-full">
+                    <svg className="w-5 h-5 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 01-2 2v4a2 2 0 012 2h14a2 2 0 012-2v-4a2 2 0 01-2-2m-2-4h.01M17 16h.01" /></svg>
+                </div>
+                <div className="flex-1">
+                    <label className="text-[10px] text-blue-300 uppercase font-bold tracking-wider block">Endereço do Servidor (API)</label>
+                    {isEditingUrl ? (
+                        <div className="flex items-center gap-2 mt-1">
+                            <input 
+                                type="text" 
+                                value={tempUrl} 
+                                onChange={(e) => setTempUrl(e.target.value)} 
+                                className="bg-black/40 border border-blue-400 rounded px-2 py-1 text-sm text-white focus:outline-none w-full md:w-64"
+                            />
+                            <button onClick={handleSaveUrl} className="text-xs bg-green-600 hover:bg-green-500 text-white px-2 py-1 rounded">Salvar</button>
+                            <button onClick={() => { setTempUrl(serverUrl); setIsEditingUrl(false); }} className="text-xs bg-slate-700 hover:bg-slate-600 text-white px-2 py-1 rounded">Cancelar</button>
+                        </div>
+                    ) : (
+                        <div className="flex items-center gap-2 mt-1">
+                            <span className="font-mono text-lg font-bold text-white">{serverUrl}</span>
+                            <button onClick={() => setIsEditingUrl(true)} className="text-xs text-slate-400 hover:text-white" title="Editar IP">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                            </button>
+                        </div>
+                    )}
+                </div>
+            </div>
+            
+            <div className="h-8 w-[1px] bg-white/10 hidden md:block" />
+
+            <div className="flex-1 w-full md:w-auto flex justify-end">
+                <button 
+                    onClick={handleTestConnection}
+                    disabled={testing}
+                    className={`w-full md:w-auto text-sm px-4 py-2 rounded-lg border transition-all flex items-center justify-center gap-2 font-semibold shadow-lg ${testing ? 'bg-yellow-500/20 border-yellow-500 text-yellow-200' : 'bg-green-500 hover:bg-green-400 text-white border-green-500/50'}`}
+                >
+                    {testing ? (
+                        <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-200"></div>
+                            Verificando...
+                        </>
+                    ) : (
+                        <>
+                            Testar Conexão
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
+                        </>
+                    )}
+                </button>
+            </div>
         </div>
       </div>
 
@@ -301,6 +348,9 @@ app.listen(port, '0.0.0.0', () => {
                             </li>
                             <li>
                                 <strong className="text-white">Firewall do Windows:</strong> O Windows bloqueia a porta 3000 por padrão.
+                            </li>
+                            <li>
+                                <strong className="text-white">Bloqueio de Navegador (CORS):</strong> Atualize o <code className="text-green-300">server.js</code> com o código da aba 3, que agora inclui o desbloqueio <i>"Access-Control-Allow-Private-Network"</i>.
                             </li>
                         </ul>
                     </div>

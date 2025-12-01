@@ -6,12 +6,17 @@ import { RegistrationForm } from './components/RegistrationForm';
 import { ServerSetup } from './components/ServerSetup';
 import { ApiGenerator } from './components/ApiGenerator';
 import { ConsoleLogger } from './components/ConsoleLogger';
+import { SecurityModal } from './components/SecurityModal';
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<ViewState>(ViewState.WELCOME);
   const [logs, setLogs] = useState<LogEntry[]>([]);
   // Estado global para a URL do servidor, permitindo edição
   const [serverUrl, setServerUrl] = useState<string>('http://192.168.16.169:3000');
+  
+  // Controle de segurança para navegação
+  const [showSecurityNav, setShowSecurityNav] = useState(false);
+  const [pendingView, setPendingView] = useState<ViewState | null>(null);
 
   useEffect(() => {
     const savedUrl = localStorage.getItem('pastoral_server_url');
@@ -38,16 +43,33 @@ const App: React.FC = () => {
 
   const clearLogs = () => setLogs([]);
 
+  // Lógica de navegação protegida
+  const handleNavigation = (view: ViewState) => {
+    if (view === ViewState.SERVER_SETUP) {
+      setPendingView(view);
+      setShowSecurityNav(true);
+    } else {
+      setCurrentView(view);
+    }
+  };
+
+  const handleSecuritySuccess = () => {
+    if (pendingView) {
+      setCurrentView(pendingView);
+      setPendingView(null);
+    }
+  };
+
   const renderView = () => {
     switch (currentView) {
       case ViewState.WELCOME:
-        return <WelcomeScreen onNavigate={(view) => setCurrentView(view)} />;
+        return <WelcomeScreen onNavigate={handleNavigation} />;
       case ViewState.REGISTER:
         return (
           <RegistrationForm 
             onBack={() => setCurrentView(ViewState.WELCOME)} 
             addLog={addLog} 
-            serverUrl={serverUrl} // Passando a URL configurada
+            serverUrl={serverUrl} 
           />
         );
       case ViewState.SERVER_SETUP:
@@ -63,7 +85,7 @@ const App: React.FC = () => {
       case ViewState.AI_GENERATOR:
         return <div className="h-full p-4"><ApiGenerator onBack={() => setCurrentView(ViewState.SERVER_SETUP)} /></div>;
       default:
-        return <WelcomeScreen onNavigate={(view) => setCurrentView(view)} />;
+        return <WelcomeScreen onNavigate={handleNavigation} />;
     }
   };
 
@@ -104,6 +126,14 @@ const App: React.FC = () => {
 
       {/* Floating Console Logger */}
       <ConsoleLogger logs={logs} onClear={clearLogs} />
+
+      {/* Security Modal for Server Configuration */}
+      <SecurityModal 
+        isOpen={showSecurityNav}
+        onClose={() => { setShowSecurityNav(false); setPendingView(null); }}
+        onSuccess={handleSecuritySuccess}
+        title="Configuração do Servidor"
+      />
     </div>
   );
 };

@@ -14,13 +14,15 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onNavigate }) => {
         <div className="w-32 h-32 rounded-full bg-white backdrop-blur-md border-4 border-white/30 flex items-center justify-center shadow-[0_0_40px_rgba(59,130,246,0.5)] transition-transform hover:scale-105 overflow-hidden p-1">
            {/* Logo Oficial da Pastoral Familiar */}
            <img 
-             src="https://upload.wikimedia.org/wikipedia/commons/e/ee/Logo_Pastoral_Familiar.png" 
+            // src="https://upload.wikimedia.org/wikipedia/commons/e/ee/Logo_Pastoral_Familiar.png" 
+                src= "https://swufojxuemmouglmlptu.supabase.co/storage/v1/object/public/logos/1763492095165.png"
              alt="Pastoral Familiar Logo" 
              className="w-full h-full object-contain"
              onError={(e) => {
-               // Fallback if image fails
+               // If image fails, do NOT show generic user icon. Show alt text or nothing.
                e.currentTarget.style.display = 'none';
-               e.currentTarget.parentElement!.innerHTML = '<svg class="w-16 h-16 text-blue-600" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>';
+               e.currentTarget.parentElement!.classList.add('bg-blue-100');
+               e.currentTarget.parentElement!.innerHTML = '<span class="text-xs text-blue-800 font-bold">Logo Pastoral</span>';
              }}
            />
         </div>
