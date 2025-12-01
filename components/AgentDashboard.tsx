@@ -43,31 +43,33 @@ export const AgentDashboard: React.FC<AgentDashboardProps> = ({ currentUser, ser
       });
       
       const text = await response.text();
-      addLog('info', `Resposta Servidor (Status: ${response.status})`, `Body: ${text.substring(0, 150)}${text.length > 150 ? '...' : ''}`);
-
-      if (response.ok) {
-        try {
-            const data = JSON.parse(text);
-            if (Array.isArray(data)) {
-                setAgents(data);
-                addLog('success', 'Lista de agentes carregada', `${data.length} registros encontrados.`);
-            } else {
-                throw new Error("Formato inválido: Esperado Array JSON.");
-            }
-        } catch (jsonErr) {
-            console.error(jsonErr);
-            throw new Error("Erro ao processar JSON. O servidor pode ter retornado HTML ou texto plano.");
-        }
-      } else {
+      
+      if (!response.ok) {
+        addLog('error', `Erro Servidor: ${response.status}`, `Msg: ${text.substring(0, 200)}`);
+        
         if (text.includes('<!DOCTYPE html>')) {
-            throw new Error("Recebido HTML em vez de JSON. Verifique Ngrok ou Rota.");
+             throw new Error("O endpoint retornou HTML (Provavelmente erro do Ngrok ou rota incorreta).");
         }
-        throw new Error(`Erro ${response.status}: ${response.statusText}`);
+        throw new Error(`Servidor retornou erro ${response.status}: ${text}`);
       }
+
+      addLog('success', `Resposta OK (${response.status})`, `Body Preview: ${text.substring(0, 100)}...`);
+
+      try {
+          const data = JSON.parse(text);
+          if (Array.isArray(data)) {
+              setAgents(data);
+          } else {
+              throw new Error("O servidor retornou dados, mas não é uma lista (Array).");
+          }
+      } catch (jsonErr) {
+          throw new Error("Erro ao ler JSON. O servidor pode ter enviado texto plano.");
+      }
+
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
       console.error("Erro ao buscar agentes", error);
-      setError(`Erro: ${msg}`);
+      setError(`${msg}`);
       addLog('error', 'Falha ao buscar agentes', msg);
     } finally {
       setLoading(false);
@@ -187,7 +189,7 @@ export const AgentDashboard: React.FC<AgentDashboardProps> = ({ currentUser, ser
                   <p className="text-red-300 font-bold mb-2">Erro de Conexão</p>
                   <p className="text-sm text-red-200/70">{error}</p>
                   <div className="mt-2 text-xs text-red-300/50 font-mono bg-black/30 p-2 rounded">
-                      Verifique o Terminal (canto inferior direito) para detalhes da resposta.
+                      Verifique o Terminal (canto inferior direito) para ver o erro exato do servidor.
                   </div>
                   <button onClick={fetchAgents} className="mt-4 px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg text-sm">Tentar Novamente</button>
               </div>
