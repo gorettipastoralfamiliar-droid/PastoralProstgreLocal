@@ -7,6 +7,8 @@ import { ServerSetup } from './components/ServerSetup';
 import { ApiGenerator } from './components/ApiGenerator';
 import { ConsoleLogger } from './components/ConsoleLogger';
 import { SecurityModal } from './components/SecurityModal';
+import { LoginModal } from './components/LoginModal';
+import { AgentDashboard } from './components/AgentDashboard';
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<ViewState>(ViewState.WELCOME);
@@ -17,6 +19,10 @@ const App: React.FC = () => {
   // Controle de segurança para navegação
   const [showSecurityNav, setShowSecurityNav] = useState(false);
   const [pendingView, setPendingView] = useState<ViewState | null>(null);
+
+  // Login Modal State
+  const [showLogin, setShowLogin] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
 
   useEffect(() => {
     const savedUrl = localStorage.getItem('pastoral_server_url');
@@ -60,10 +66,22 @@ const App: React.FC = () => {
     }
   };
 
+  const handleLoginSuccess = (user: any) => {
+    setCurrentUser(user);
+    setShowLogin(false);
+    setCurrentView(ViewState.DASHBOARD);
+    addLog('success', 'Login Efetuado', `Usuário: ${user.nome_completo}`);
+  };
+
   const renderView = () => {
     switch (currentView) {
       case ViewState.WELCOME:
-        return <WelcomeScreen onNavigate={handleNavigation} />;
+        return (
+            <WelcomeScreen 
+                onNavigate={handleNavigation} 
+                onLoginClick={() => setShowLogin(true)} 
+            />
+        );
       case ViewState.REGISTER:
         return (
           <RegistrationForm 
@@ -84,8 +102,21 @@ const App: React.FC = () => {
         );
       case ViewState.AI_GENERATOR:
         return <div className="h-full p-4"><ApiGenerator onBack={() => setCurrentView(ViewState.SERVER_SETUP)} /></div>;
+      
+      case ViewState.DASHBOARD:
+        return (
+            <div className="h-full">
+                <AgentDashboard 
+                    currentUser={currentUser} 
+                    serverUrl={serverUrl} 
+                    onLogout={() => { setCurrentUser(null); setCurrentView(ViewState.WELCOME); }}
+                    onNavigate={handleNavigation}
+                />
+            </div>
+        );
+      
       default:
-        return <WelcomeScreen onNavigate={handleNavigation} />;
+        return <WelcomeScreen onNavigate={handleNavigation} onLoginClick={() => setShowLogin(true)} />;
     }
   };
 
@@ -100,28 +131,30 @@ const App: React.FC = () => {
       {/* Main App Container */}
       <div className={`
         w-full h-screen md:h-[90vh] relative z-10 flex flex-col transition-all duration-500
-        ${currentView === ViewState.WELCOME ? 'md:max-w-md' : 'md:max-w-6xl'}
+        ${currentView === ViewState.WELCOME ? 'md:max-w-md' : 'md:max-w-7xl'}
       `}>
          {/* Glassmorphism Container */}
-        <div className="flex-1 bg-white/10 md:backdrop-blur-xl md:border md:border-white/20 md:rounded-[30px] shadow-2xl overflow-hidden flex flex-col relative">
+        <div className={`flex-1 bg-white/10 md:backdrop-blur-xl md:border md:border-white/20 md:rounded-[30px] shadow-2xl overflow-hidden flex flex-col relative ${currentView === ViewState.DASHBOARD ? 'bg-[#111827] border-0 md:border-gray-700' : ''}`}>
           
-          {/* Header Blur Overlay (Visible on internal pages scroll) */}
-          {currentView !== ViewState.WELCOME && (
+          {/* Header Blur Overlay (Visible on internal pages scroll, NOT Dashboard) */}
+          {currentView !== ViewState.WELCOME && currentView !== ViewState.DASHBOARD && (
             <div className="absolute top-0 left-0 right-0 h-20 bg-gradient-to-b from-slate-900/50 to-transparent z-20 pointer-events-none" />
           )}
 
-          <div className="flex-1 overflow-y-auto scroll-smooth custom-scrollbar pb-20 md:pb-0">
+          <div className={`flex-1 overflow-y-auto scroll-smooth custom-scrollbar ${currentView !== ViewState.DASHBOARD ? 'pb-20 md:pb-0' : ''}`}>
             {renderView()}
           </div>
           
         </div>
         
         {/* Footer */}
-        <div className="text-center py-4 md:py-2">
-          <p className="text-blue-300/40 text-[10px] uppercase tracking-widest">
-            Sistema de Agentes • V 1.0 • Conectado a: {serverUrl}
-          </p>
-        </div>
+        {currentView !== ViewState.DASHBOARD && (
+            <div className="text-center py-4 md:py-2">
+            <p className="text-blue-300/40 text-[10px] uppercase tracking-widest">
+                Sistema de Agentes • V 1.0 • Conectado a: {serverUrl}
+            </p>
+            </div>
+        )}
       </div>
 
       {/* Floating Console Logger */}
@@ -134,6 +167,14 @@ const App: React.FC = () => {
         onSuccess={handleSecuritySuccess}
         title="Configuração do Servidor"
       />
+
+       {/* Login Modal */}
+       <LoginModal 
+         isOpen={showLogin}
+         onClose={() => setShowLogin(false)}
+         onSuccess={handleLoginSuccess}
+         serverUrl={serverUrl}
+       />
     </div>
   );
 };

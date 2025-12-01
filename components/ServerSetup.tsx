@@ -11,7 +11,7 @@ interface ServerSetupProps {
 }
 
 export const ServerSetup: React.FC<ServerSetupProps> = ({ onBack, onNavigateToAI, addLog, serverUrl, onUpdateServerUrl }) => {
-  const [activeTab, setActiveTab] = useState<'node' | 'sql' | 'guide'>('guide');
+  const [activeTab, setActiveTab] = useState<'node' | 'sql' | 'guide' | 'ngrok'>('guide');
   const [copied, setCopied] = useState(false);
   const [testing, setTesting] = useState(false);
   const [isEditingUrl, setIsEditingUrl] = useState(false);
@@ -103,33 +103,30 @@ CREATE TABLE IF NOT EXISTS membros (
 `;
 
   const nodeCode = `
-// server.js - Backend Atualizado para Pastoral
-// Instale: npm install express pg cors helmet dotenv
+// server.js - Backend Atualizado para Pastoral (v2 - Sem CORS Lib)
+// Instale: npm install express pg dotenv
 
 require('dotenv').config();
 const express = require('express');
 const { Pool } = require('pg');
-const cors = require('cors');
-const helmet = require('helmet');
 
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Configuração CRÍTICA para funcionar em Rede Local (CORS + Private Network)
-app.use(cors({
-  origin: '*', // Em produção, restrinja para a URL do seu site
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Access-Control-Allow-Private-Network'],
-  credentials: true
-}));
-
-// Middleware extra para permitir acesso de IP privado (Chrome/Edge update)
+// Configuração Manual de Headers (Mais robusto que cors lib para IP Local)
 app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Private-Network", "true");
+  res.header("Access-Control-Allow-Origin", "*"); // Permite qualquer origem (Frontend)
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, Access-Control-Allow-Private-Network");
+  res.header("Access-Control-Allow-Private-Network", "true"); // CRÍTICO para Chrome/Edge
+  
+  // Responder IMEDIATAMENTE ao Preflight (OPTIONS)
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
   next();
 });
 
-app.use(helmet());
 app.use(express.json({ limit: '10mb' }));
 
 // Conexão com Banco de Dados Doméstico
@@ -143,6 +140,35 @@ const pool = new Pool({
 
 // GET: Rota de Teste Simples
 app.get('/', (req, res) => res.send('API Pastoral Online ✝️'));
+
+// POST: Verificar Login (Para Desafio de Data)
+app.post('/api/membros/check-login', async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const { login } = req.body;
+    // Busca ignorando case sensitive
+    const result = await client.query('SELECT * FROM membros WHERE upper(login) = upper($1)', [login]);
+    
+    if (result.rows.length > 0) {
+      const u = result.rows[0];
+      // Retorna apenas dados necessários para o desafio
+      res.json({ 
+        found: true, 
+        nome_completo: u.nome_completo,
+        estado_civil: u.estado_civil,
+        data_nascimento: u.data_nascimento,
+        data_casamento: u.data_casamento
+      });
+    } else {
+      res.json({ found: false });
+    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  } finally {
+    client.release();
+  }
+});
 
 // GET: Listar Agentes
 app.get('/api/membros', async (req, res) => {
@@ -229,7 +255,7 @@ app.listen(port, '0.0.0.0', () => {
                 <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
                 <div>
                     <strong>Atenção (Mixed Content):</strong> Você está acessando este site via <strong>HTTPS</strong>, mas tentando conectar num servidor <strong>HTTP</strong>. O navegador bloqueará isso por segurança.
-                    <br/>Solução: Acesse este site via HTTP (se for local) ou instale um túnel seguro (Cloudflare) no seu servidor.
+                    <br/>Solução: Instale o Ngrok (aba 4) ou acesse via localhost.
                 </div>
             </div>
         )}
@@ -307,11 +333,17 @@ app.listen(port, '0.0.0.0', () => {
         >
           3. Node.js API
         </button>
+        <button 
+          onClick={() => setActiveTab('ngrok')}
+          className={`flex-1 min-w-[120px] py-3 rounded-lg text-sm font-semibold transition-colors ${activeTab === 'ngrok' ? 'bg-orange-600 text-white shadow-lg shadow-orange-900/20' : 'bg-white/5 text-slate-400 hover:bg-white/10'}`}
+        >
+          4. Ngrok (Vercel)
+        </button>
       </div>
 
       {/* Code Area */}
       <div className="flex-1 relative bg-[#0d1117] rounded-xl border border-white/10 overflow-hidden flex flex-col shadow-inner">
-        {activeTab !== 'guide' && (
+        {activeTab === 'node' || activeTab === 'sql' ? (
             <div className="absolute top-0 right-0 p-3 z-10">
             <button 
                 onClick={() => copyToClipboard(activeTab === 'node' ? nodeCode : sqlCode)}
@@ -330,7 +362,7 @@ app.listen(port, '0.0.0.0', () => {
                 )}
             </button>
             </div>
-        )}
+        ) : null}
         
         <div className="flex-1 overflow-auto custom-scrollbar p-6">
             {activeTab === 'guide' && (
@@ -341,52 +373,64 @@ app.listen(port, '0.0.0.0', () => {
                         <h3 className="text-red-300 font-bold text-lg mb-2 flex items-center gap-2">
                            ⚠️ Problemas de Conexão? Leia aqui.
                         </h3>
-                        <p className="mb-2">Se o "Teste de Conexão" falhou, geralmente é por um destes dois motivos:</p>
+                        <p className="mb-2">Se o "Teste de Conexão" falhou, verifique:</p>
                         <ul className="list-disc pl-5 space-y-2">
                             <li>
-                                <strong className="text-white">IP Incorreto:</strong> Seu roteador pode ter mudado o IP do servidor.
+                                <strong className="text-white">IP Incorreto:</strong> Seu roteador pode ter mudado o IP. Use <code className="text-green-300">ipconfig</code>.
+                            </li>
+                             <li>
+                                <strong className="text-white">Código Node.js:</strong> Atualize o <code className="text-green-300">server.js</code> com o código da aba 3 (Versão 2).
                             </li>
                             <li>
-                                <strong className="text-white">Firewall do Windows:</strong> O Windows bloqueia a porta 3000 por padrão.
-                            </li>
-                            <li>
-                                <strong className="text-white">Bloqueio de Navegador (CORS):</strong> Atualize o <code className="text-green-300">server.js</code> com o código da aba 3, que agora inclui o desbloqueio <i>"Access-Control-Allow-Private-Network"</i>.
+                                <strong className="text-white">Vercel/HTTPS:</strong> Se este site está com cadeado (HTTPS), você não pode acessar IP local (HTTP) diretamente sem usar Ngrok (Aba 4).
                             </li>
                         </ul>
                     </div>
 
                     <div className="space-y-3">
                         <h3 className="text-blue-300 font-bold text-lg border-b border-white/10 pb-1">Passo A: Descobrir seu IP Real</h3>
-                        <p>No computador onde o Node.js vai rodar, abra o terminal (Prompt de Comando ou PowerShell) e digite:</p>
+                        <p>No computador onde o Node.js vai rodar, abra o terminal e digite:</p>
                         <code className="block bg-black/40 p-3 rounded border border-white/5 font-mono text-green-400">
                             ipconfig
                         </code>
-                        <p>Procure por <strong>Endereço IPv4</strong>. Ele deve ser algo como <code className="text-yellow-200">192.168.x.x</code> ou <code className="text-yellow-200">10.0.x.x</code>. <br/>Insira esse número no campo de edição acima.</p>
+                        <p>Copie o <strong>Endereço IPv4</strong> (ex: 192.168.1.15) e cole no campo acima.</p>
                     </div>
 
                     <div className="space-y-3">
-                         <h3 className="text-blue-300 font-bold text-lg border-b border-white/10 pb-1">Passo B: Liberar o Firewall</h3>
-                         <p>Para permitir que outros dispositivos acessem seu servidor, você precisa abrir a porta 3000. Rode este comando no <strong>PowerShell como Administrador</strong>:</p>
+                         <h3 className="text-blue-300 font-bold text-lg border-b border-white/10 pb-1">Passo B: Liberar Porta 3000</h3>
+                         <p>Rode no <strong>PowerShell como Administrador</strong>:</p>
                          <code className="block bg-black/40 p-3 rounded border border-white/5 font-mono text-green-400 select-all">
                              New-NetFirewallRule -DisplayName "NodeJS Pastoral" -Direction Inbound -LocalPort 3000 -Protocol TCP -Action Allow
                          </code>
                     </div>
+                </div>
+            )}
 
-                    <div className="space-y-3">
-                        <h3 className="text-blue-300 font-bold text-lg border-b border-white/10 pb-1">Passo C: Instalar e Rodar</h3>
-                        <p>1. Crie a pasta e instale as dependências:</p>
-                        <code className="block bg-black/40 p-3 rounded border border-white/5 font-mono text-slate-400">
-                            mkdir backend-pastoral<br/>
-                            cd backend-pastoral<br/>
-                            npm init -y<br/>
-                            npm install express pg cors helmet dotenv
-                        </code>
-                        <p>2. Crie o arquivo <code className="text-white">server.js</code> (código na aba 3) e o arquivo <code className="text-white">.env</code>.</p>
-                        <p>3. Rode o servidor:</p>
-                        <code className="block bg-black/40 p-3 rounded border border-white/5 font-mono text-green-400">
-                            node server.js
-                        </code>
+            {activeTab === 'ngrok' && (
+                <div className="space-y-6 text-sm text-slate-300">
+                     <div className="bg-orange-900/20 border border-orange-500/20 p-4 rounded-lg">
+                        <h3 className="text-orange-300 font-bold text-lg mb-2">Por que Ngrok?</h3>
+                        <p>O Vercel usa HTTPS (Seguro). O IP local é HTTP (Não seguro). Navegadores bloqueiam essa mistura.</p>
+                        <p className="mt-2">O Ngrok cria um link seguro (https://...) para o seu computador, resolvendo o problema.</p>
                     </div>
+
+                    <ol className="list-decimal pl-5 space-y-4">
+                        <li>
+                            Baixe o Ngrok em <a href="https://ngrok.com/download" target="_blank" className="text-blue-400 underline">ngrok.com</a> e instale.
+                        </li>
+                        <li>
+                            Abra o Ngrok e autentique sua conta (comando que o site deles fornece).
+                        </li>
+                        <li>
+                            Com seu servidor Node rodando na porta 3000, digite no terminal do Ngrok:
+                            <code className="block bg-black/40 p-3 rounded border border-white/5 font-mono text-green-400 mt-2">
+                                ngrok http 3000
+                            </code>
+                        </li>
+                        <li>
+                            Copie o link gerado que termina em <code className="text-white">.ngrok-free.app</code> e cole no campo "Endereço do Servidor" lá em cima.
+                        </li>
+                    </ol>
                 </div>
             )}
 

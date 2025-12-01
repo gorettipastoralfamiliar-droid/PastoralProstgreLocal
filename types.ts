@@ -3,7 +3,8 @@ export enum ViewState {
   WELCOME = 'WELCOME',
   REGISTER = 'REGISTER',
   SERVER_SETUP = 'SERVER_SETUP',
-  AI_GENERATOR = 'AI_GENERATOR'
+  AI_GENERATOR = 'AI_GENERATOR',
+  DASHBOARD = 'DASHBOARD'
 }
 
 export interface Member {

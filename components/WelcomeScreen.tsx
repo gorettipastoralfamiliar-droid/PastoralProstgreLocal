@@ -1,11 +1,13 @@
+
 import React from 'react';
 import { ViewState } from '../types';
 
 interface WelcomeScreenProps {
   onNavigate: (view: ViewState) => void;
+  onLoginClick: () => void;
 }
 
-export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onNavigate }) => {
+export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onNavigate, onLoginClick }) => {
   return (
     <div className="flex flex-col items-center justify-center min-h-full p-6 text-center animate-fade-in w-full max-w-md mx-auto">
       
@@ -14,7 +16,6 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onNavigate }) => {
         <div className="w-32 h-32 rounded-full bg-white backdrop-blur-md border-4 border-white/30 flex items-center justify-center shadow-[0_0_40px_rgba(59,130,246,0.5)] transition-transform hover:scale-105 overflow-hidden p-1">
            {/* Logo Oficial da Pastoral Familiar */}
            <img 
-            // src="https://upload.wikimedia.org/wikipedia/commons/e/ee/Logo_Pastoral_Familiar.png" 
                 src= "https://swufojxuemmouglmlptu.supabase.co/storage/v1/object/public/logos/1763492095165.png"
              alt="Pastoral Familiar Logo" 
              className="w-full h-full object-contain"
@@ -51,7 +52,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onNavigate }) => {
         <div className="space-y-6 relative z-10">
           <button 
             className="w-full py-4 bg-[#2563eb] hover:bg-[#1d4ed8] text-white rounded-xl font-semibold shadow-lg shadow-blue-600/30 transition-all active:scale-95 flex items-center justify-center gap-3"
-            onClick={() => alert('Feature de Login ainda não implementada. Use "Desejo me cadastrar".')}
+            onClick={onLoginClick}
           >
             <svg className="w-5 h-5 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
             Já sou cadastrado
