@@ -77,6 +77,37 @@ export const AgentDashboard: React.FC<AgentDashboardProps> = ({ currentUser, ser
     }
   };
 
+  const handleDelete = async (agentId?: number) => {
+    if (!agentId) return;
+    if (!confirm('Tem certeza que deseja EXCLUIR este agente? Esta ação não pode ser desfeita.')) return;
+
+    addLog('info', `Deletando agente ID: ${agentId}...`);
+    
+    try {
+        const response = await fetch(`${API_URL}/api/membros/${agentId}`, {
+            method: 'DELETE',
+            mode: 'cors',
+            headers: {
+                'Content-Type': 'application/json',
+                'ngrok-skip-browser-warning': 'true',
+                'Bypass-Tunnel-Reminder': 'true'
+            }
+        });
+
+        if (response.ok) {
+            addLog('success', `Agente ${agentId} deletado com sucesso.`);
+            setAgents(prev => prev.filter(a => a.id !== agentId));
+        } else {
+            const text = await response.text();
+            throw new Error(`Erro ${response.status}: ${text}`);
+        }
+    } catch (error) {
+        const msg = error instanceof Error ? error.message : String(error);
+        addLog('error', 'Falha ao deletar', msg);
+        alert('Erro ao excluir: ' + msg);
+    }
+  };
+
   const filteredAgents = agents.filter(agent => {
       const matchSearch = agent.nome_completo.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           agent.telefone.includes(searchTerm);
@@ -236,11 +267,19 @@ export const AgentDashboard: React.FC<AgentDashboardProps> = ({ currentUser, ser
                             </div>
                         </div>
 
-                        {/* Edit Button */}
-                        <div className="absolute bottom-4 right-4">
+                        {/* Action Buttons */}
+                        <div className="absolute bottom-4 right-4 flex gap-2">
+                           <button 
+                                onClick={() => handleDelete(agent.id)}
+                                className="p-2 rounded-full bg-slate-800 hover:bg-red-600 text-slate-400 hover:text-white transition-colors shadow-lg border border-gray-600 hover:border-red-500"
+                                title="Excluir Agente"
+                           >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                           </button>
+
                            <button 
                                 onClick={() => onEdit(agent)}
-                                className="p-2 rounded-full bg-slate-700 hover:bg-blue-600 text-slate-300 hover:text-white transition-colors shadow-lg border border-gray-600 group-hover:border-blue-500"
+                                className="p-2 rounded-full bg-slate-700 hover:bg-blue-600 text-slate-300 hover:text-white transition-colors shadow-lg border border-gray-600 hover:border-blue-500"
                                 title="Editar Agente"
                            >
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>

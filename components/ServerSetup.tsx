@@ -112,7 +112,7 @@ CREATE TABLE IF NOT EXISTS membros (
 `;
 
   const nodeCode = `
-// server.js - Versão 6 (Com Edição/PUT)
+// server.js - Versão 7 (Com Delete)
 // Instale: npm install express pg dotenv
 
 require('dotenv').config();
@@ -300,6 +300,28 @@ app.put('/api/membros/:id', async (req, res) => {
   }
 });
 
+// 5. Deletar (DELETE)
+app.delete('/api/membros/:id', async (req, res) => {
+  console.log('👉 Deletando membro ID:', req.params.id);
+  let client;
+  try {
+    client = await pool.connect();
+    const { id } = req.params;
+    
+    const query = 'DELETE FROM membros WHERE id = $1';
+    await client.query(query, [id]);
+    
+    console.log('   ✅ Deletado com sucesso');
+    res.json({ success: true });
+    
+  } catch (err) {
+    console.error('❌ Erro ao deletar:', err);
+    res.status(500).json({ error: 'Erro ao deletar', details: err.message });
+  } finally {
+    if (client) client.release();
+  }
+});
+
 app.listen(port, '0.0.0.0', () => {
   console.log(\`🚀 Servidor rodando em http://localhost:\${port}\`);
 });
@@ -449,10 +471,10 @@ app.listen(port, '0.0.0.0', () => {
                         <h3 className="text-red-300 font-bold text-lg mb-2 flex items-center gap-2">
                            ⚠️ IMPORTANTE: Atualize o arquivo server.js
                         </h3>
-                        <p className="mb-2">Para corrigir erros de conexão e Ngrok, atualize seu código:</p>
+                        <p className="mb-2">Para habilitar a função de DELETAR, atualize seu código:</p>
                         <ol className="list-decimal pl-5 space-y-2 text-white">
                             <li>Clique na aba <strong className="text-green-300">3. Node.js API</strong> acima.</li>
-                            <li>Copie o novo código (v6).</li>
+                            <li>Copie o novo código (v7).</li>
                             <li>No seu PC, substitua todo o conteúdo do arquivo <code className="text-green-300">server.js</code>.</li>
                             <li>Reinicie o servidor (<code className="text-green-300">Ctrl+C</code> e depois <code className="text-green-300">node server.js</code>).</li>
                         </ol>
