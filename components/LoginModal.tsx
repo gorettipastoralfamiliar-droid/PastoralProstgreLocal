@@ -83,45 +83,73 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onSucce
 
     setChallengeType(type);
     
-    // Parse date (assuming YYYY-MM-DD from Postgres)
-    // Remove Time part if exists
+    // Parse date safely handling strings like "1980-05-20" or "1980-05-20T00:00:00"
     const cleanDateStr = correctDateStr.split('T')[0];
-    setCorrectAnswer(formatDateBR(cleanDateStr));
+    const [y, m, d] = cleanDateStr.split('-').map(Number);
+    // Note: Month in JS Date is 0-indexed (0=Jan, 11=Dec)
+    const baseDateObj = new Date(y, m - 1, d);
+
+    const correctFmt = formatDateBR(baseDateObj);
+    setCorrectAnswer(correctFmt);
     
-    // Generate 3 wrong options
     const opts = new Set<string>();
-    opts.add(formatDateBR(cleanDateStr));
+    opts.add(correctFmt);
 
-    const baseDate = new Date(cleanDateStr);
-
+    // Generate 3 unique wrong options with high entropy
     while (opts.size < 4) {
-      const variant = new Date(baseDate);
+      const variant = new Date(baseDateObj);
       const rand = Math.random();
       
-      if (rand < 0.33) {
-        // Change Day
-        variant.setDate(variant.getDate() + Math.floor(Math.random() * 20) - 10);
-      } else if (rand < 0.66) {
-        // Change Month
-        variant.setMonth(variant.getMonth() + Math.floor(Math.random() * 5) - 2);
-      } else {
-        // Change Year
-        variant.setFullYear(variant.getFullYear() + Math.floor(Math.random() * 4) - 2);
+      if (rand < 0.25) {
+        // Variação Simples: Muda apenas o Ano (erro comum)
+        // +/- 1 a 5 anos
+        const diff = Math.floor(Math.random() * 5) + 1;
+        variant.setFullYear(variant.getFullYear() + (Math.random() > 0.5 ? diff : -diff));
+      } 
+      else if (rand < 0.50) {
+        // Variação Média: Muda Ano e Mês
+        const yearDiff = Math.floor(Math.random() * 10) - 5; // -5 a +5 anos
+        const monthDiff = Math.floor(Math.random() * 6) + 1; // 1 a 6 meses
+        variant.setFullYear(variant.getFullYear() + yearDiff);
+        variant.setMonth(variant.getMonth() + (Math.random() > 0.5 ? monthDiff : -monthDiff));
+      } 
+      else if (rand < 0.75) {
+        // Variação Sutil: Muda apenas o dia e mês próximo
+        variant.setMonth(variant.getMonth() + (Math.random() > 0.5 ? 1 : -1));
+        variant.setDate(Math.floor(Math.random() * 28) + 1);
+      }
+      else {
+        // Caos Total: Muda tudo
+        variant.setFullYear(variant.getFullYear() + Math.floor(Math.random() * 20) - 10);
+        variant.setDate(Math.floor(Math.random() * 28) + 1);
       }
       
-      const fmt = formatDateBR(variant.toISOString().split('T')[0]);
-      if (fmt !== formatDateBR(cleanDateStr)) {
+      const fmt = formatDateBR(variant);
+      if (fmt !== correctFmt) {
         opts.add(fmt);
       }
     }
 
-    // Shuffle
-    setOptions(Array.from(opts).sort(() => Math.random() - 0.5));
+    // Convert Set to Array and Shuffle utilizing Fisher-Yates for true randomness
+    const finalOptions = Array.from(opts);
+    shuffleArray(finalOptions);
+    setOptions(finalOptions);
   };
 
-  const formatDateBR = (isoDate: string) => {
-    const [year, month, day] = isoDate.split('-');
-    return `${day}/${month}/${year}`;
+  // Algoritmo Fisher-Yates para embaralhamento real
+  const shuffleArray = (array: string[]) => {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+  };
+
+  const formatDateBR = (date: Date) => {
+    const d = String(date.getDate()).padStart(2, '0');
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const y = date.getFullYear();
+    return `${d}/${m}/${y}`;
   };
 
   const handleOptionClick = (option: string) => {
@@ -130,11 +158,13 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onSucce
       onClose();
     } else {
       setError('Data incorreta. Tente novamente.');
+      // Delay reset to let user see error
       setTimeout(() => {
         onClose();
         setStep('LOGIN');
         setLogin('');
         setError('');
+        setUserData(null);
       }, 1500);
     }
   };
@@ -194,7 +224,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onSucce
                      <button
                         key={idx}
                         onClick={() => handleOptionClick(opt)}
-                        className="py-3 bg-white/5 hover:bg-blue-600/20 border border-white/10 hover:border-blue-500 rounded-lg text-white transition-all active:scale-95"
+                        className="py-3 bg-white/5 hover:bg-blue-600/20 border border-white/10 hover:border-blue-500 rounded-lg text-white transition-all active:scale-95 font-medium"
                      >
                          {opt}
                      </button>
