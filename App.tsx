@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { ViewState, LogEntry, LogType } from './types';
+import { ViewState, LogEntry, LogType, Member } from './types';
 import { WelcomeScreen } from './components/WelcomeScreen';
 import { RegistrationForm } from './components/RegistrationForm';
 import { ServerSetup } from './components/ServerSetup';
@@ -23,6 +23,9 @@ const App: React.FC = () => {
   // Login Modal State
   const [showLogin, setShowLogin] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
+
+  // State for Editing
+  const [agentToEdit, setAgentToEdit] = useState<Member | null>(null);
 
   useEffect(() => {
     const savedUrl = localStorage.getItem('pastoral_server_url');
@@ -55,6 +58,10 @@ const App: React.FC = () => {
       setPendingView(view);
       setShowSecurityNav(true);
     } else {
+      // Se navegar para REGISTER pelo fluxo normal, limpa o edit
+      if (view === ViewState.REGISTER) {
+        setAgentToEdit(null);
+      }
       setCurrentView(view);
     }
   };
@@ -73,6 +80,11 @@ const App: React.FC = () => {
     addLog('success', 'Login Efetuado', `Usuário: ${user.nome_completo}`);
   };
 
+  const handleEditAgent = (agent: Member) => {
+    setAgentToEdit(agent);
+    setCurrentView(ViewState.REGISTER);
+  };
+
   const renderView = () => {
     switch (currentView) {
       case ViewState.WELCOME:
@@ -85,9 +97,18 @@ const App: React.FC = () => {
       case ViewState.REGISTER:
         return (
           <RegistrationForm 
-            onBack={() => setCurrentView(ViewState.WELCOME)} 
+            onBack={() => {
+                // If we were editing, go back to dashboard
+                if (agentToEdit || currentUser) {
+                    setCurrentView(ViewState.DASHBOARD);
+                } else {
+                    setCurrentView(ViewState.WELCOME);
+                }
+                setAgentToEdit(null);
+            }} 
             addLog={addLog} 
             serverUrl={serverUrl} 
+            initialData={agentToEdit}
           />
         );
       case ViewState.SERVER_SETUP:
@@ -112,6 +133,7 @@ const App: React.FC = () => {
                     onLogout={() => { setCurrentUser(null); setCurrentView(ViewState.WELCOME); }}
                     onNavigate={handleNavigation}
                     addLog={addLog}
+                    onEdit={handleEditAgent}
                 />
             </div>
         );

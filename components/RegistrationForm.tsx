@@ -1,19 +1,19 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Member, LogType } from '../types';
 
 interface RegistrationFormProps {
   onBack: () => void;
   addLog: (type: LogType, message: string, details?: string) => void;
-  serverUrl: string; // Nova prop
+  serverUrl: string;
+  initialData?: Member | null; // Dados para edição
 }
 
-export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBack, addLog, serverUrl }) => {
+export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBack, addLog, serverUrl, initialData }) => {
   const [loading, setLoading] = useState(false);
   const [cepLoading, setCepLoading] = useState(false);
   
-  // URL agora vem via props (configurada no App.tsx)
-  const API_URL = serverUrl.replace(/\/$/, ''); // Remove barra final se houver
+  const API_URL = serverUrl.replace(/\/$/, '');
 
   const [formData, setFormData] = useState<Member>({
     nome_completo: '',
@@ -36,6 +36,19 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBack, addL
     observacoes: '',
     foto: '' 
   });
+
+  // Carrega dados se for edição
+  useEffect(() => {
+      if (initialData) {
+          setFormData({
+              ...initialData,
+              // Garante formatação correta de datas para o input type="date"
+              data_nascimento: initialData.data_nascimento ? initialData.data_nascimento.split('T')[0] : '',
+              data_casamento: initialData.data_casamento ? initialData.data_casamento.split('T')[0] : '',
+              data_ingresso: initialData.data_ingresso ? initialData.data_ingresso.split('T')[0] : '',
+          });
+      }
+  }, [initialData]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -107,16 +120,20 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBack, addL
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    addLog('info', 'Iniciando cadastro de agente...', `POST ${API_URL}/api/membros`);
+
+    const isEdit = !!initialData?.id;
+    const url = isEdit ? `${API_URL}/api/membros/${initialData.id}` : `${API_URL}/api/membros`;
+    const method = isEdit ? 'PUT' : 'POST';
+
+    addLog('info', `${isEdit ? 'Atualizando' : 'Cadastrando'} agente...`, `${method} ${url}`);
     
-    // Tenta conectar no backend configurado
     try {
-        const response = await fetch(`${API_URL}/api/membros`, {
-            method: 'POST',
-            mode: 'cors', // Explicitar CORS
+        const response = await fetch(url, {
+            method: method,
+            mode: 'cors',
             headers: { 
                 'Content-Type': 'application/json',
-                'ngrok-skip-browser-warning': 'true', // Bypass Ngrok warning page
+                'ngrok-skip-browser-warning': 'true',
                 'Bypass-Tunnel-Reminder': 'true'
             },
             body: JSON.stringify(formData)
@@ -125,14 +142,8 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBack, addL
         const text = await response.text();
 
         if (response.ok) {
-            let result;
-            try {
-                result = JSON.parse(text);
-            } catch (e) {
-                // Ignore parsing error if ok but not json, though API should return json
-            }
-            addLog('success', 'Agente cadastrado com sucesso!', `Resposta Server: ${text.substring(0,50)}...`);
-            alert('Cadastro realizado com sucesso!');
+            addLog('success', `Agente ${isEdit ? 'atualizado' : 'cadastrado'} com sucesso!`);
+            alert(isEdit ? 'Atualização realizada!' : 'Cadastro realizado!');
             onBack();
         } else {
             throw new Error(`Status ${response.status}: ${text}`);
@@ -140,13 +151,12 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBack, addL
 
     } catch (error) {
         const errorMsg = error instanceof Error ? error.message : String(error);
-        
-        if (errorMsg.includes('Failed to fetch') || errorMsg.includes('JSON')) {
-            addLog('error', 'Bloqueio de CORS ou Rede', `Verifique se o backend aceita o header 'ngrok-skip-browser-warning'.`);
-            alert(`Falha de Conexão.\n\nDetalhes no Terminal de Logs.`);
+        if (errorMsg.includes('Failed to fetch')) {
+            addLog('error', 'Bloqueio de CORS ou Rede', `Se for edição, verifique se o server.js tem a rota PUT.`);
+            alert(`Falha de Conexão.\n\nSe estiver editando, atualize seu 'server.js' para a Versão 6 (Com PUT).`);
         } else {
-            addLog('error', 'O servidor recusou o cadastro', errorMsg);
-            alert(`Erro no cadastro: ${errorMsg}`);
+            addLog('error', 'O servidor recusou a operação', errorMsg);
+            alert(`Erro: ${errorMsg}`);
         }
     } finally {
         setLoading(false);
@@ -161,7 +171,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBack, addL
         <button onClick={onBack} className="p-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur text-white transition-all">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
         </button>
-        <h2 className="text-2xl font-bold tracking-tight">Novo Agente</h2>
+        <h2 className="text-2xl font-bold tracking-tight">{initialData ? 'Editar Agente' : 'Novo Agente'}</h2>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -341,7 +351,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBack, addL
                     : 'bg-[#2563eb] hover:bg-[#1d4ed8] text-white shadow-blue-600/30 active:scale-95'}
                 `}
                 >
-                {loading ? 'Salvando...' : 'Realizar Cadastro'}
+                {loading ? 'Salvando...' : (initialData ? 'Salvar Alterações' : 'Realizar Cadastro')}
                 </button>
             </div>
         </div>

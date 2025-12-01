@@ -112,7 +112,7 @@ CREATE TABLE IF NOT EXISTS membros (
 `;
 
   const nodeCode = `
-// server.js - Versão 5 (Fix CORS, Ngrok & Error Handling)
+// server.js - Versão 6 (Com Edição/PUT)
 // Instale: npm install express pg dotenv
 
 require('dotenv').config();
@@ -256,6 +256,45 @@ app.post('/api/membros', async (req, res) => {
   } catch (err) {
     console.error('❌ Erro no Cadastro:', err);
     res.status(500).json({ error: 'Erro ao salvar', details: err.message });
+  } finally {
+    if (client) client.release();
+  }
+});
+
+// 4. Atualizar (PUT)
+app.put('/api/membros/:id', async (req, res) => {
+  console.log('👉 Atualizando membro ID:', req.params.id);
+  let client;
+  try {
+    client = await pool.connect();
+    const { id } = req.params;
+    const data = req.body;
+    
+    const query = \`
+      UPDATE membros SET
+        foto = $1, nome_completo = $2, login = $3, data_nascimento = $4, estado_civil = $5,
+        nome_conjuge = $6, data_casamento = $7, telefone = $8, email = $9, cep = $10,
+        logradouro = $11, bairro = $12, cidade = $13, uf = $14, possui_veiculo = $15,
+        modelo_veiculo = $16, paroquia = $17, comunidade = $18, setor = $19, funcao = $20,
+        data_ingresso = $21, observacoes = $22
+      WHERE id = $23
+    \`;
+    
+    const values = [
+      data.foto, data.nome_completo, data.login, data.data_nascimento, data.estado_civil,
+      data.nome_conjuge, data.data_casamento || null, data.telefone, data.email, data.cep,
+      data.logradouro, data.bairro, data.cidade, data.uf, data.possui_veiculo,
+      data.modelo_veiculo, data.paroquia, data.comunidade, data.setor, data.funcao,
+      data.data_ingresso, data.observacoes, id
+    ];
+
+    await client.query(query, values);
+    console.log('   ✅ Atualizado com sucesso');
+    res.json({ success: true });
+    
+  } catch (err) {
+    console.error('❌ Erro na Atualização:', err);
+    res.status(500).json({ error: 'Erro ao atualizar', details: err.message });
   } finally {
     if (client) client.release();
   }
@@ -413,7 +452,7 @@ app.listen(port, '0.0.0.0', () => {
                         <p className="mb-2">Para corrigir erros de conexão e Ngrok, atualize seu código:</p>
                         <ol className="list-decimal pl-5 space-y-2 text-white">
                             <li>Clique na aba <strong className="text-green-300">3. Node.js API</strong> acima.</li>
-                            <li>Copie o novo código (v5).</li>
+                            <li>Copie o novo código (v6).</li>
                             <li>No seu PC, substitua todo o conteúdo do arquivo <code className="text-green-300">server.js</code>.</li>
                             <li>Reinicie o servidor (<code className="text-green-300">Ctrl+C</code> e depois <code className="text-green-300">node server.js</code>).</li>
                         </ol>
