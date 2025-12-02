@@ -9,6 +9,7 @@ import { ConsoleLogger } from './components/ConsoleLogger';
 import { SecurityModal } from './components/SecurityModal';
 import { LoginModal } from './components/LoginModal';
 import { AgentDashboard } from './components/AgentDashboard';
+import { ReportsView } from './components/ReportsView';
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<ViewState>(ViewState.WELCOME);
@@ -138,6 +139,18 @@ const App: React.FC = () => {
             </div>
         );
       
+      case ViewState.REPORTS:
+        return (
+          <div className="h-full">
+            <ReportsView 
+              currentUser={currentUser}
+              serverUrl={serverUrl}
+              onBack={() => setCurrentView(ViewState.DASHBOARD)}
+              addLog={addLog}
+            />
+          </div>
+        );
+      
       default:
         return <WelcomeScreen onNavigate={handleNavigation} onLoginClick={() => setShowLogin(true)} />;
     }
@@ -157,21 +170,21 @@ const App: React.FC = () => {
         ${currentView === ViewState.WELCOME ? 'md:max-w-md' : 'md:max-w-7xl'}
       `}>
          {/* Glassmorphism Container */}
-        <div className={`flex-1 bg-white/10 md:backdrop-blur-xl md:border md:border-white/20 md:rounded-[30px] shadow-2xl overflow-hidden flex flex-col relative ${currentView === ViewState.DASHBOARD ? 'bg-[#111827] border-0 md:border-gray-700' : ''}`}>
+        <div className={`flex-1 bg-white/10 md:backdrop-blur-xl md:border md:border-white/20 md:rounded-[30px] shadow-2xl overflow-hidden flex flex-col relative ${currentView === ViewState.DASHBOARD || currentView === ViewState.REPORTS ? 'bg-[#111827] border-0 md:border-gray-700' : ''}`}>
           
-          {/* Header Blur Overlay (Visible on internal pages scroll, NOT Dashboard) */}
-          {currentView !== ViewState.WELCOME && currentView !== ViewState.DASHBOARD && (
+          {/* Header Blur Overlay (Visible on internal pages scroll, NOT Dashboard/Reports) */}
+          {currentView !== ViewState.WELCOME && currentView !== ViewState.DASHBOARD && currentView !== ViewState.REPORTS && (
             <div className="absolute top-0 left-0 right-0 h-20 bg-gradient-to-b from-slate-900/50 to-transparent z-20 pointer-events-none" />
           )}
 
-          <div className={`flex-1 overflow-y-auto scroll-smooth custom-scrollbar ${currentView !== ViewState.DASHBOARD ? 'pb-20 md:pb-0' : ''}`}>
+          <div className={`flex-1 overflow-y-auto scroll-smooth custom-scrollbar ${currentView !== ViewState.DASHBOARD && currentView !== ViewState.REPORTS ? 'pb-20 md:pb-0' : ''}`}>
             {renderView()}
           </div>
           
         </div>
         
         {/* Footer */}
-        {currentView !== ViewState.DASHBOARD && (
+        {currentView !== ViewState.DASHBOARD && currentView !== ViewState.REPORTS && (
             <div className="text-center py-4 md:py-2">
             <p className="text-blue-300/40 text-[10px] uppercase tracking-widest">
                 Sistema de Agentes • V 1.0 • Conectado a: {serverUrl}

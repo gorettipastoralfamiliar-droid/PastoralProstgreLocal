@@ -24,6 +24,12 @@ export const AgentDashboard: React.FC<AgentDashboardProps> = ({ currentUser, ser
 
   const API_URL = serverUrl.replace(/\/$/, '');
 
+  // PERMISSION CHECK
+  // If function is 'Agente', user can only see themselves and cannot create new users
+  const isRestrictedView = currentUser?.funcao === 'Agente';
+  // Reports are NOT available for Agente
+  const canViewReports = currentUser?.funcao !== 'Agente';
+
   useEffect(() => {
     fetchAgents();
   }, []);
@@ -109,6 +115,11 @@ export const AgentDashboard: React.FC<AgentDashboardProps> = ({ currentUser, ser
   };
 
   const filteredAgents = agents.filter(agent => {
+      // 1. Permission Check
+      if (isRestrictedView && agent.id && currentUser.id && agent.id !== String(currentUser.id) && agent.id !== Number(currentUser.id)) {
+          return false;
+      }
+
       const matchSearch = agent.nome_completo.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           agent.telefone.includes(searchTerm);
       const matchSetor = filterSetor === 'Todos' || agent.setor === filterSetor;
@@ -134,16 +145,27 @@ export const AgentDashboard: React.FC<AgentDashboardProps> = ({ currentUser, ser
          </div>
 
          <div className="flex items-center gap-6 text-sm">
-             <span className="hidden md:block text-gray-300">Olá, <strong>{currentUser.nome_completo.split(' ')[0]}</strong>!</span>
+             <div className="hidden md:block text-right">
+                 <span className="block text-gray-300">Olá, <strong>{currentUser.nome_completo.split(' ')[0]}</strong>!</span>
+                 <span className="text-[10px] text-blue-400 bg-blue-900/30 px-2 py-0.5 rounded border border-blue-800">{currentUser.funcao || 'Usuário'}</span>
+             </div>
              
              <div className="flex items-center gap-4 border-l border-gray-600 pl-6">
-                 <button onClick={fetchAgents} className="flex items-center gap-2 text-yellow-500 font-medium hover:text-yellow-400 transition-colors">
-                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-                     Atualizar
+                 <button onClick={fetchAgents} className="flex items-center gap-2 text-yellow-500 font-medium hover:text-yellow-400 transition-colors" title="Listar Agentes">
+                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                     <span className="hidden md:inline">Listar Agentes</span>
                  </button>
-                 <button onClick={onLogout} className="flex items-center gap-2 text-orange-400 hover:text-orange-300 transition-colors ml-2">
+
+                 {canViewReports && (
+                    <button onClick={() => onNavigate(ViewState.REPORTS)} className="flex items-center gap-2 text-blue-400 font-medium hover:text-blue-300 transition-colors">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+                        Relatórios
+                    </button>
+                 )}
+
+                 <button onClick={onLogout} className="flex items-center gap-2 text-orange-400 hover:text-orange-300 transition-colors ml-2" title="Sair">
                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
-                     Sair
+                     <span className="hidden md:inline">Sair</span>
                  </button>
              </div>
          </div>
@@ -209,10 +231,12 @@ export const AgentDashboard: React.FC<AgentDashboardProps> = ({ currentUser, ser
               <h2 className="text-2xl font-bold text-white">Agentes Cadastrados ({filteredAgents.length})</h2>
               
               <div className="flex items-center gap-3">
-                  <button onClick={() => onNavigate(ViewState.REGISTER)} className="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-bold flex items-center gap-2 shadow-lg shadow-blue-900/20">
-                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>
-                     Novo
-                  </button>
+                  {!isRestrictedView && (
+                    <button onClick={() => onNavigate(ViewState.REGISTER)} className="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-bold flex items-center gap-2 shadow-lg shadow-blue-900/20">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>
+                        Novo
+                    </button>
+                  )}
               </div>
           </div>
           
@@ -234,6 +258,12 @@ export const AgentDashboard: React.FC<AgentDashboardProps> = ({ currentUser, ser
                </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredAgents.length === 0 && (
+                    <div className="col-span-full text-center text-gray-500 py-10">
+                        {isRestrictedView ? "Seu cadastro não foi carregado. Tente atualizar." : "Nenhum agente encontrado com os filtros atuais."}
+                    </div>
+                )}
+                
                 {filteredAgents.map(agent => (
                     <div key={agent.id} className="bg-[#1f2937] border border-gray-700 rounded-xl p-6 relative group hover:border-gray-500 transition-all">
                         <div className="flex gap-4 mb-4">
@@ -269,13 +299,16 @@ export const AgentDashboard: React.FC<AgentDashboardProps> = ({ currentUser, ser
 
                         {/* Action Buttons */}
                         <div className="absolute bottom-4 right-4 flex gap-2">
-                           <button 
-                                onClick={() => handleDelete(agent.id)}
-                                className="p-2 rounded-full bg-slate-800 hover:bg-red-600 text-slate-400 hover:text-white transition-colors shadow-lg border border-gray-600 hover:border-red-500"
-                                title="Excluir Agente"
-                           >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                           </button>
+                           
+                           {!isRestrictedView && (
+                               <button 
+                                    onClick={() => handleDelete(agent.id)}
+                                    className="p-2 rounded-full bg-slate-800 hover:bg-red-600 text-slate-400 hover:text-white transition-colors shadow-lg border border-gray-600 hover:border-red-500"
+                                    title="Excluir Agente"
+                               >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                               </button>
+                           )}
 
                            <button 
                                 onClick={() => onEdit(agent)}

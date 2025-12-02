@@ -112,7 +112,7 @@ CREATE TABLE IF NOT EXISTS membros (
 `;
 
   const nodeCode = `
-// server.js - Versão 7 (Com Delete)
+// server.js - Versão 8 (Com RBAC Login)
 // Instale: npm install express pg dotenv
 
 require('dotenv').config();
@@ -182,8 +182,9 @@ app.post('/api/membros/check-login', async (req, res) => {
     const { login } = req.body;
     
     // Busca Case Insensitive
+    // ATUALIZADO V8: Retorna ID e Função para controle de acesso
     const result = await client.query(
-      'SELECT nome_completo, estado_civil, data_nascimento, data_casamento FROM membros WHERE UPPER(login) = UPPER($1)', 
+      'SELECT id, funcao, nome_completo, estado_civil, data_nascimento, data_casamento FROM membros WHERE UPPER(login) = UPPER($1)', 
       [login]
     );
     
@@ -471,10 +472,10 @@ app.listen(port, '0.0.0.0', () => {
                         <h3 className="text-red-300 font-bold text-lg mb-2 flex items-center gap-2">
                            ⚠️ IMPORTANTE: Atualize o arquivo server.js
                         </h3>
-                        <p className="mb-2">Para habilitar a função de DELETAR, atualize seu código:</p>
+                        <p className="mb-2">Para habilitar o controle de permissões (Agente vê apenas a si mesmo), atualize seu código:</p>
                         <ol className="list-decimal pl-5 space-y-2 text-white">
                             <li>Clique na aba <strong className="text-green-300">3. Node.js API</strong> acima.</li>
-                            <li>Copie o novo código (v7).</li>
+                            <li>Copie o novo código (v8).</li>
                             <li>No seu PC, substitua todo o conteúdo do arquivo <code className="text-green-300">server.js</code>.</li>
                             <li>Reinicie o servidor (<code className="text-green-300">Ctrl+C</code> e depois <code className="text-green-300">node server.js</code>).</li>
                         </ol>
