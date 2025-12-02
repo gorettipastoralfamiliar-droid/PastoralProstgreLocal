@@ -53,6 +53,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBack, addL
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     
+    // Máscara de CEP
     if (name === 'cep') {
         const numbers = value.replace(/\D/g, '');
         setFormData(prev => ({ ...prev, [name]: numbers }));
@@ -61,6 +62,24 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBack, addL
         }
         return;
     }
+
+    // Máscara de Telefone (XX) XXXXX-XXXX
+    if (name === 'telefone') {
+        let nums = value.replace(/\D/g, '');
+        if (nums.length > 11) nums = nums.slice(0, 11);
+        
+        let formatted = nums;
+        if (nums.length > 2) {
+            formatted = `(${nums.slice(0, 2)}) ${nums.slice(2)}`;
+        }
+        if (nums.length > 7) {
+            formatted = `(${nums.slice(0, 2)}) ${nums.slice(2, 7)}-${nums.slice(7)}`;
+        }
+        
+        setFormData(prev => ({ ...prev, [name]: formatted }));
+        return;
+    }
+
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
