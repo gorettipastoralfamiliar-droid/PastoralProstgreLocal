@@ -112,17 +112,18 @@ CREATE TABLE IF NOT EXISTS membros (
 `;
 
   const nodeCode = `
-// server.js - Versão 8 (Com RBAC Login)
-// Instale: npm install express pg dotenv
+// server.js - Versão 9 (Com CORS Permissivo e Correções)
+// Instale: npm install express pg dotenv cors
 
 require('dotenv').config();
 const express = require('express');
 const { Pool } = require('pg');
+const cors = require('cors'); // Opcional se usar a config manual abaixo
 
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Configuração de CORS Manual (Mais permissiva para dev)
+// Configuração de CORS Manual (Extreme Permissive para resolver Failed to Fetch)
 app.use((req, res, next) => {
   // Permite qualquer origem (Frontend/Vercel)
   res.header("Access-Control-Allow-Origin", "*"); 
@@ -145,6 +146,7 @@ app.use((req, res, next) => {
 
 // Aumenta limite para upload de fotos (base64)
 app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Configuração do Banco de Dados
 const pool = new Pool({
@@ -472,10 +474,10 @@ app.listen(port, '0.0.0.0', () => {
                         <h3 className="text-red-300 font-bold text-lg mb-2 flex items-center gap-2">
                            ⚠️ IMPORTANTE: Atualize o arquivo server.js
                         </h3>
-                        <p className="mb-2">Para habilitar o controle de permissões (Agente vê apenas a si mesmo), atualize seu código:</p>
+                        <p className="mb-2">Para garantir o download das fotos e evitar erros de permissão:</p>
                         <ol className="list-decimal pl-5 space-y-2 text-white">
                             <li>Clique na aba <strong className="text-green-300">3. Node.js API</strong> acima.</li>
-                            <li>Copie o novo código (v8).</li>
+                            <li>Copie o novo código (v9).</li>
                             <li>No seu PC, substitua todo o conteúdo do arquivo <code className="text-green-300">server.js</code>.</li>
                             <li>Reinicie o servidor (<code className="text-green-300">Ctrl+C</code> e depois <code className="text-green-300">node server.js</code>).</li>
                         </ol>

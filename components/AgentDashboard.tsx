@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Member, ViewState, LogType } from '../types';
 import { WhatsAppModal } from './WhatsAppModal';
+import JSZip from 'jszip';
 
 interface AgentDashboardProps {
   currentUser: any;
@@ -16,6 +17,9 @@ export const AgentDashboard: React.FC<AgentDashboardProps> = ({ currentUser, ser
   const [agents, setAgents] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Export Loading State
+  const [isExporting, setIsExporting] = useState(false);
   
   // Selection
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
@@ -76,7 +80,16 @@ export const AgentDashboard: React.FC<AgentDashboardProps> = ({ currentUser, ser
 
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
-      setError(`${msg}`);
+      let friendlyMsg = msg;
+      
+      if (msg.includes('Failed to fetch')) {
+        const isMixedContent = window.location.protocol === 'https:' && API_URL.startsWith('http:');
+        friendlyMsg = isMixedContent 
+            ? "Falha de Conexão (Mixed Content): Seu navegador bloqueou o acesso porque o site é HTTPS e o servidor é HTTP. Use o Ngrok ou acesse via localhost."
+            : "Falha de Conexão: O servidor não respondeu. Verifique se ele está rodando e se o IP está correto.";
+      }
+      
+      setError(friendlyMsg);
       addLog('error', 'Falha ao buscar agentes', msg);
     } finally {
       setLoading(false);
@@ -106,25 +119,23 @@ export const AgentDashboard: React.FC<AgentDashboardProps> = ({ currentUser, ser
                 next.delete(agentId);
                 return next;
             });
+        } else {
+            throw new Error(`Erro ${response.status}`);
         }
     } catch (error) {
         alert('Erro ao excluir: ' + error);
+        addLog('error', 'Erro ao excluir agente', String(error));
     }
   };
 
-  // Wrapper para adicionar efeito visual antes de navegar
   const handleEditClick = (agent: Member) => {
       if (!agent.id) return;
       setEditingId(agent.id);
-      
-      // Pequeno delay para o usuário perceber o efeito visual antes da tela mudar
       setTimeout(() => {
           onEdit(agent);
-          // O componente será desmontado ao navegar, limpando o estado naturalmente
       }, 300);
   };
 
-  // --- CSV Export Logic ---
   const handleExportCSV = () => {
       if (filteredAgents.length === 0) return;
 
@@ -154,6 +165,124 @@ export const AgentDashboard: React.FC<AgentDashboardProps> = ({ currentUser, ser
       document.body.removeChild(link);
   };
 
+  // --- Photos Export Logic (ZIP) ---
+  const handleExportPhotos = async () => {
+      const agentsToExport = filteredAgents.filter(a => a.foto && a.foto.trim().length > 0);
+
+      if (agentsToExport.length === 0) {
+          alert("Nenhum agente com foto encontrada para exportação.");
+          return;
+      }
+
+      if(!confirm(`Deseja baixar um arquivo ZIP com as fotos de ${agentsToExport.length} agentes?`)) {
+          return;
+      }
+
+      setIsExporting(true);
+      addLog('info', 'Iniciando ZIP...', `Processando ${agentsToExport.length} fotos.`);
+
+      try {
+        // Garantia de importação do JSZip em diferentes ambientes (ESM/CommonJS)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const ZipClass = (JSZip as any).default || JSZip;
+        const zip = new ZipClass();
+        const folder = zip.folder("fotos_agentes");
+
+        let count = 0;
+
+        // Processamento em Loop
+        for (const agent of agentsToExport) {
+            if (!agent.foto) continue;
+            
+            try {
+                // Sanitização do nome do arquivo
+                const firstName = agent.nome_completo.split(' ')[0].trim().replace(/[^a-z0-9]/gi, '_');
+                const safeName = `${agent.id}_${firstName}`;
+
+                // LÓGICA 1: Verifica se é Base64 Data URI (formato padrão do app)
+                if (agent.foto.includes('base64,')) {
+                    const parts = agent.foto.split(',');
+                    
+                    if (parts.length === 2) {
+                        const base64Data = parts[1];
+                        const mimeType = parts[0].split(':')[1].split(';')[0];
+                        
+                        let extension = 'jpg'; // Default
+                        if (mimeType.includes('png')) extension = 'png';
+                        else if (mimeType.includes('gif')) extension = 'gif';
+                        else if (mimeType.includes('jpeg') || mimeType.includes('jpg')) extension = 'jpg';
+
+                        folder?.file(`${safeName}.${extension}`, base64Data, { base64: true });
+                        count++;
+                    }
+                } 
+                // LÓGICA 2: Verifica se é uma URL (http/https)
+                else if (agent.foto.startsWith('http')) {
+                    try {
+                        // Tenta baixar a imagem
+                        const response = await fetch(agent.foto, { 
+                            mode: 'cors',
+                            cache: 'no-cache'
+                        });
+                        
+                        if (response.ok) {
+                            const blob = await response.blob();
+                            // Determina extensão pelo Blob type
+                            let ext = 'jpg';
+                            if (blob.type === 'image/png') ext = 'png';
+                            else if (blob.type === 'image/gif') ext = 'gif';
+                            
+                            folder?.file(`${safeName}.${ext}`, blob);
+                            count++;
+                        } else {
+                            console.warn(`Falha ao baixar URL para ${agent.nome_completo}: ${response.status}`);
+                            addLog('warning', `Foto ignorada: ${firstName}`, `Erro ${response.status} ao baixar URL.`);
+                        }
+                    } catch (fetchErr) {
+                         // Erro comum: Failed to fetch (CORS ou Mixed Content)
+                         console.error(`Erro de rede na foto de ${agent.nome_completo}`, fetchErr);
+                         addLog('warning', `Foto ignorada: ${firstName}`, "Bloqueio de CORS ou Erro de Rede.");
+                    }
+                }
+                // LÓGICA 3: Base64 pura sem cabeçalho (fallback)
+                else if (agent.foto.length > 100) {
+                     // Assume JPEG
+                     folder?.file(`${safeName}.jpg`, agent.foto, { base64: true });
+                     count++;
+                }
+
+            } catch (e) {
+                console.error("Erro ao processar imagem do agente:", agent.nome_completo, e);
+            }
+        }
+
+        if (count > 0) {
+            addLog('info', 'Comprimindo...', 'Gerando arquivo final.');
+            const content = await zip.generateAsync({ type: "blob" });
+            const url = URL.createObjectURL(content);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `fotos_agentes_${new Date().toISOString().split('T')[0]}.zip`;
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            addLog('success', 'ZIP Criado com Sucesso', `${count} fotos exportadas.`);
+        } else {
+            addLog('warning', 'Nenhuma foto válida processada', 'Verifique se as imagens não estão corrompidas ou inacessíveis.');
+            alert("Nenhuma foto válida encontrada para exportação. Verifique o console/log.");
+        }
+
+      } catch (error) {
+          console.error("Erro fatal ZIP:", error);
+          addLog('error', 'Erro ao criar ZIP', String(error));
+          alert("Erro crítico ao gerar ZIP.");
+      } finally {
+          setIsExporting(false);
+      }
+  };
+
   const filteredAgents = agents.filter(agent => {
       if (isRestrictedView && agent.id && currentUser.id && agent.id !== String(currentUser.id) && agent.id !== Number(currentUser.id)) {
           return false;
@@ -166,7 +295,6 @@ export const AgentDashboard: React.FC<AgentDashboardProps> = ({ currentUser, ser
       return matchSearch && matchSetor && matchCivil && matchFuncao;
   });
 
-  // --- Selection Logic ---
   const handleToggleSelect = (id: number) => {
       setSelectedIds(prev => {
           const next = new Set(prev);
@@ -178,7 +306,7 @@ export const AgentDashboard: React.FC<AgentDashboardProps> = ({ currentUser, ser
 
   const handleSelectAll = () => {
       if (selectedIds.size === filteredAgents.length) {
-          setSelectedIds(new Set()); // Deselect all
+          setSelectedIds(new Set());
       } else {
           const allIds = filteredAgents.map(a => a.id!).filter(id => id !== undefined);
           setSelectedIds(new Set(allIds));
@@ -190,7 +318,6 @@ export const AgentDashboard: React.FC<AgentDashboardProps> = ({ currentUser, ser
   return (
     <div className="flex flex-col h-full bg-[#111827] text-slate-100 overflow-hidden font-sans relative">
       
-      {/* WhatsApp Modal */}
       <WhatsAppModal 
         isOpen={showWhatsApp} 
         onClose={() => setShowWhatsApp(false)} 
@@ -201,7 +328,7 @@ export const AgentDashboard: React.FC<AgentDashboardProps> = ({ currentUser, ser
       <div className="h-16 bg-[#1f2937] border-b border-gray-700 flex items-center justify-between px-6 shrink-0">
          <div className="flex items-center gap-3">
              <div className="w-8 h-8 rounded-full bg-white p-0.5 overflow-hidden">
-                <img src="https://swufojxuemmouglmlptu.supabase.co/storage/v1/object/public/logos/1763492095165.png" className="w-full h-full object-contain" alt="Logo" />
+                <img src="https://swufojxuemmouglmlptu.supabase.co/storage/v1/object/public/logos/1763492095165.png" className="w-full h-full object-contain" alt="Logo" loading="lazy" />
              </div>
              <div>
                  <h1 className="text-lg font-bold text-white leading-tight">Pastoral Familiar</h1>
@@ -307,7 +434,6 @@ export const AgentDashboard: React.FC<AgentDashboardProps> = ({ currentUser, ser
               </div>
               
               <div className="flex items-center gap-3">
-                  {/* Bulk Actions (Only Visible if items selected) */}
                   {selectedIds.size > 0 && (
                       <div className="flex items-center gap-2 bg-blue-900/30 border border-blue-500/30 rounded-lg px-3 py-1 animate-fade-in mr-2">
                           <span className="text-xs text-blue-200 font-bold">{selectedIds.size} selecionado(s)</span>
@@ -322,17 +448,31 @@ export const AgentDashboard: React.FC<AgentDashboardProps> = ({ currentUser, ser
                   )}
 
                   {!isRestrictedView && (
-                    <button onClick={handleExportCSV} className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-sm font-bold flex items-center gap-2 border border-gray-600">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                        Exportar CSV
-                    </button>
-                  )}
+                     <>
+                        <button 
+                            onClick={handleExportPhotos} 
+                            disabled={isExporting}
+                            className={`px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-sm font-bold flex items-center gap-2 border border-purple-800 shadow-lg shadow-purple-900/20 ${isExporting ? 'opacity-50 cursor-not-allowed' : ''}`} 
+                            title="Baixar todas as fotos (ZIP)"
+                        >
+                            {isExporting ? (
+                                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            ) : (
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                            )}
+                            {isExporting ? 'Gerando...' : 'Fotos ZIP'}
+                        </button>
 
-                  {!isRestrictedView && (
-                    <button onClick={() => onNavigate(ViewState.REGISTER)} className="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-bold flex items-center gap-2 shadow-lg shadow-blue-900/20">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>
-                        Novo
-                    </button>
+                        <button onClick={handleExportCSV} className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-sm font-bold flex items-center gap-2 border border-gray-600">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                            Exportar CSV
+                        </button>
+
+                        <button onClick={() => onNavigate(ViewState.REGISTER)} className="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-bold flex items-center gap-2 shadow-lg shadow-blue-900/20">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>
+                            Novo
+                        </button>
+                    </>
                   )}
               </div>
           </div>
@@ -384,7 +524,7 @@ export const AgentDashboard: React.FC<AgentDashboardProps> = ({ currentUser, ser
                         <div className="flex gap-4 mb-4">
                             <div className="w-16 h-16 rounded-full bg-gray-700 flex-shrink-0 overflow-hidden border border-gray-600">
                                 {agent.foto ? (
-                                    <img src={agent.foto} className="w-full h-full object-cover" />
+                                    <img src={agent.foto} className="w-full h-full object-cover" loading="lazy" />
                                 ) : (
                                     <div className="w-full h-full flex items-center justify-center text-gray-500">
                                         <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
@@ -412,7 +552,6 @@ export const AgentDashboard: React.FC<AgentDashboardProps> = ({ currentUser, ser
                             </div>
                         </div>
 
-                        {/* Action Buttons */}
                         <div className="absolute bottom-4 left-4 right-4 flex justify-end gap-2">
                            
                            {!isRestrictedView && (

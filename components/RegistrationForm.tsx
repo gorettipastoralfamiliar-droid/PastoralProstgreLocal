@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Member, LogType } from '../types';
+import { compressImage } from '../utils/imageCompressor';
 
 interface RegistrationFormProps {
   onBack: () => void;
@@ -12,6 +13,7 @@ interface RegistrationFormProps {
 export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBack, addLog, serverUrl, initialData }) => {
   const [loading, setLoading] = useState(false);
   const [cepLoading, setCepLoading] = useState(false);
+  const [compressingInfo, setCompressingInfo] = useState('');
   
   const API_URL = serverUrl.replace(/\/$/, '');
 
@@ -88,14 +90,19 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBack, addL
     setFormData(prev => ({ ...prev, [name]: checked }));
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData(prev => ({ ...prev, foto: reader.result as string }));
-      };
-      reader.readAsDataURL(file);
+      try {
+          setCompressingInfo('Otimizando imagem...');
+          const compressedBase64 = await compressImage(file);
+          setFormData(prev => ({ ...prev, foto: compressedBase64 }));
+          setCompressingInfo('');
+      } catch (error) {
+          console.error("Erro ao comprimir imagem", error);
+          alert("Erro ao processar imagem. Tente outra.");
+          setCompressingInfo('');
+      }
     }
   };
 
@@ -220,6 +227,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBack, addL
                                 )}
                                 </div>
                                 <input type="file" accept="image/*" onChange={handleFileChange} className="absolute inset-0 opacity-0 cursor-pointer" />
+                                {compressingInfo && <div className="absolute -bottom-6 left-0 w-full text-center text-[10px] text-green-400 animate-pulse">{compressingInfo}</div>}
                             </div>
                         </div>
 
@@ -362,15 +370,15 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBack, addL
 
                 <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || !!compressingInfo}
                 className={`
                     w-full py-4 rounded-xl font-bold text-lg shadow-xl transition-all transform hover:-translate-y-1
-                    ${loading 
+                    ${loading || !!compressingInfo
                     ? 'bg-slate-700 text-slate-400 cursor-not-allowed' 
                     : 'bg-[#2563eb] hover:bg-[#1d4ed8] text-white shadow-blue-600/30 active:scale-95'}
                 `}
                 >
-                {loading ? 'Salvando...' : (initialData ? 'Salvar Alterações' : 'Realizar Cadastro')}
+                {loading ? 'Salvando...' : compressingInfo ? 'Processando foto...' : (initialData ? 'Salvar Alterações' : 'Realizar Cadastro')}
                 </button>
             </div>
         </div>
