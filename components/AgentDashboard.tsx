@@ -117,10 +117,10 @@ export const AgentDashboard: React.FC<AgentDashboardProps> = ({ currentUser, ser
       if (!agent.id) return;
       setEditingId(agent.id);
       
-      // Pequeno delay para o usuário perceber o efeito visual
+      // Pequeno delay para o usuário perceber o efeito visual antes da tela mudar
       setTimeout(() => {
           onEdit(agent);
-          // Não resetamos editingId aqui pois o componente será desmontado ao navegar
+          // O componente será desmontado ao navegar, limpando o estado naturalmente
       }, 300);
   };
 
@@ -361,9 +361,9 @@ export const AgentDashboard: React.FC<AgentDashboardProps> = ({ currentUser, ser
                 {filteredAgents.map(agent => (
                     <div 
                         key={agent.id} 
-                        className={`bg-[#1f2937] border rounded-xl p-6 relative group transition-all duration-200 ${
+                        className={`bg-[#1f2937] border rounded-xl p-6 relative group transition-all duration-300 ${
                             editingId === agent.id 
-                            ? 'border-blue-400 ring-2 ring-blue-400 shadow-[0_0_20px_rgba(59,130,246,0.3)] scale-[1.02] z-10'
+                            ? 'border-blue-500 shadow-[0_0_30px_rgba(59,130,246,0.5)] scale-[1.03] z-20 ring-2 ring-blue-400'
                             : selectedIds.has(agent.id!) 
                                 ? 'border-blue-500 ring-1 ring-blue-500/50' 
                                 : 'border-gray-700 hover:border-gray-500'
