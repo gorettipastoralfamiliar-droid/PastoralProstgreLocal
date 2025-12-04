@@ -16,7 +16,7 @@ const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<ViewState>(ViewState.WELCOME);
   const [logs, setLogs] = useState<LogEntry[]>([]);
   // Estado global para a URL do servidor, permitindo edição
-  const [serverUrl, setServerUrl] = useState<string>('http://192.168.16.169:3000');
+  const [serverUrl, setServerUrl] = useState<string>('https://eleanora-uncraven-unavowably.ngrok-free.dev');
   
   // Controle de segurança para navegação
   const [showSecurityNav, setShowSecurityNav] = useState(false);
