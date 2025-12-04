@@ -190,14 +190,14 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBack, addL
   };
 
   return (
-    <div className="p-6 pb-24 animate-fade-in relative text-slate-100">
+    <div className="p-4 md:p-6 pb-24 animate-fade-in relative text-slate-100">
       
       {/* Header */}
-      <div className="flex items-center gap-4 mb-8">
+      <div className="flex items-center gap-4 mb-6 md:mb-8">
         <button onClick={onBack} className="p-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur text-white transition-all">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
         </button>
-        <h2 className="text-2xl font-bold tracking-tight">{initialData ? 'Editar Agente' : 'Novo Agente'}</h2>
+        <h2 className="text-xl md:text-2xl font-bold tracking-tight">{initialData ? 'Editar Agente' : 'Novo Agente'}</h2>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -207,7 +207,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBack, addL
 
             {/* Left Column: Personal Data */}
             <div className="md:col-span-8 space-y-6">
-                <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6 space-y-4">
+                <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 md:p-6 space-y-4">
                     <h3 className="text-sm font-semibold text-blue-300 uppercase tracking-wider mb-2 flex items-center gap-2">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
                         Dados Pessoais
@@ -216,7 +216,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBack, addL
                     <div className="flex flex-col md:flex-row gap-6">
                         <div className="flex-shrink-0 flex justify-center md:justify-start">
                             <div className="relative group cursor-pointer">
-                                <div className="w-28 h-28 rounded-2xl bg-slate-800/50 border-2 border-dashed border-blue-400/50 flex items-center justify-center overflow-hidden transition-all group-hover:border-blue-400">
+                                <div className="w-24 h-24 md:w-28 md:h-28 rounded-2xl bg-slate-800/50 border-2 border-dashed border-blue-400/50 flex items-center justify-center overflow-hidden transition-all group-hover:border-blue-400">
                                 {formData.foto ? (
                                     <img src={formData.foto} alt="Preview" className="w-full h-full object-cover" />
                                 ) : (
@@ -254,7 +254,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBack, addL
                     )}
                 </div>
 
-                <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6 space-y-4 relative overflow-hidden transition-all">
+                <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 md:p-6 space-y-4 relative overflow-hidden transition-all">
                      {cepLoading && (
                          <div className="absolute inset-0 z-10 bg-black/40 backdrop-blur-sm flex items-center justify-center rounded-2xl">
                              <div className="flex items-center gap-3">
@@ -281,7 +281,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBack, addL
                                     required 
                                     placeholder="00000000" 
                                     maxLength={8} 
-                                    className="w-full bg-black/20 border border-white/10 rounded-lg pl-4 pr-10 py-3 text-white placeholder-white/20 focus:outline-none focus:border-blue-400 transition-all text-sm"
+                                    className="w-full bg-black/20 border border-white/10 rounded-lg pl-4 pr-10 py-2 md:py-3 text-white placeholder-white/20 focus:outline-none focus:border-blue-400 transition-all text-sm"
                                 />
                                 <button 
                                     type="button"
@@ -308,7 +308,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBack, addL
 
             {/* Right Column: Pastoral Info */}
             <div className="md:col-span-4 space-y-6">
-                <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6 space-y-4">
+                <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 md:p-6 space-y-4">
                     <h3 className="text-sm font-semibold text-blue-300 uppercase tracking-wider mb-2 flex items-center gap-2">
                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
                         Dados da Pastoral
@@ -338,7 +338,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBack, addL
                     <InputField label="Data de Ingresso" type="date" name="data_ingresso" value={formData.data_ingresso} onChange={handleChange} required />
                 </div>
 
-                <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6 space-y-4">
+                <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 md:p-6 space-y-4">
                     <h3 className="text-sm font-semibold text-blue-300 uppercase tracking-wider mb-2 flex items-center gap-2">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                         Outros
@@ -363,7 +363,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBack, addL
                             value={formData.observacoes || ''} 
                             onChange={handleChange}
                             rows={4}
-                            className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-400 transition-colors resize-none text-sm"
+                            className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-2 md:py-3 text-white focus:outline-none focus:border-blue-400 transition-colors resize-none text-sm"
                         />
                     </div>
                 </div>
@@ -392,7 +392,7 @@ const InputField = ({ label, className, ...props }: React.InputHTMLAttributes<HT
   <div className={`space-y-1 ${className}`}>
     <label className="text-xs text-blue-200 ml-1 block font-medium">{label}</label>
     <input 
-      className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-white/20 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400/50 transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+      className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-2 md:py-3 text-white placeholder-white/20 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400/50 transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed"
       {...props}
     />
   </div>
@@ -403,7 +403,7 @@ const SelectField = ({ label, options, ...props }: React.SelectHTMLAttributes<HT
     <label className="text-xs text-blue-200 ml-1 block font-medium">{label}</label>
     <div className="relative">
         <select 
-        className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-400 transition-all appearance-none text-sm"
+        className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-2 md:py-3 text-white focus:outline-none focus:border-blue-400 transition-all appearance-none text-sm"
         {...props}
         >
         <option value="" disabled className="bg-slate-800 text-slate-400">Selecione...</option>

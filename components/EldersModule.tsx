@@ -14,7 +14,7 @@ interface EldersModuleProps {
 const TABS = {
   ELDERS: 'Assistidos',
   EVENTS: 'Eventos',
-  TRANSPORT: 'Transporte & Alocação'
+  TRANSPORT: 'Transporte'
 };
 
 // --- HELPER STATUS LOGIC ---
@@ -85,35 +85,35 @@ const ElderWhatsAppModal: React.FC<ElderWhatsAppModalProps> = ({ isOpen, onClose
         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
             <GlassCard className="w-full max-w-4xl h-[85vh] flex flex-col border-green-500/30 p-0 overflow-hidden bg-[#111827]">
                 <div className="p-4 border-b border-white/10 bg-green-900/20 flex justify-between items-center">
-                    <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                        <span className="text-2xl">📱</span> Disparo WhatsApp ({selectedElders.length})
+                    <h3 className="text-lg md:text-xl font-bold text-white flex items-center gap-2">
+                        <span className="text-xl md:text-2xl">📱</span> Disparo WhatsApp ({selectedElders.length})
                     </h3>
-                    <button onClick={onClose} className="text-slate-400 hover:text-white">✕</button>
+                    <button onClick={onClose} className="text-slate-400 hover:text-white p-2">✕</button>
                 </div>
 
                 <div className="flex-1 flex flex-col md:flex-row min-h-0">
                     {/* Configuração das Mensagens */}
                     <div className="w-full md:w-1/3 p-4 border-r border-white/10 overflow-y-auto custom-scrollbar bg-black/20">
-                        <h4 className="font-bold text-green-400 mb-2 text-sm uppercase">1. Mensagem para o Idoso</h4>
+                        <h4 className="font-bold text-green-400 mb-2 text-xs md:text-sm uppercase">1. Mensagem para o Idoso</h4>
                         <textarea 
                             value={messageElder} 
                             onChange={e => setMessageElder(e.target.value)}
-                            className="w-full h-32 bg-black/40 border border-white/10 rounded-lg p-3 text-sm text-white mb-4 focus:border-green-500 outline-none resize-none"
+                            className="w-full h-24 md:h-32 bg-black/40 border border-white/10 rounded-lg p-3 text-xs md:text-sm text-white mb-4 focus:border-green-500 outline-none resize-none"
                         />
-                        <div className="text-xs text-slate-400 mb-6">Variável: {`{nome}`}</div>
+                        <div className="text-[10px] md:text-xs text-slate-400 mb-6">Variável: {`{nome}`}</div>
 
-                        <h4 className="font-bold text-blue-400 mb-2 text-sm uppercase">2. Mensagem para Responsável</h4>
+                        <h4 className="font-bold text-blue-400 mb-2 text-xs md:text-sm uppercase">2. Mensagem para Responsável</h4>
                         <textarea 
                             value={messageResp} 
                             onChange={e => setMessageResp(e.target.value)}
-                            className="w-full h-32 bg-black/40 border border-white/10 rounded-lg p-3 text-sm text-white mb-4 focus:border-blue-500 outline-none resize-none"
+                            className="w-full h-24 md:h-32 bg-black/40 border border-white/10 rounded-lg p-3 text-xs md:text-sm text-white mb-4 focus:border-blue-500 outline-none resize-none"
                         />
-                         <div className="text-xs text-slate-400">Variáveis: {`{nome}, {responsavel}`}</div>
+                         <div className="text-[10px] md:text-xs text-slate-400">Variáveis: {`{nome}, {responsavel}`}</div>
                     </div>
 
                     {/* Lista de Envio */}
                     <div className="flex-1 p-4 overflow-y-auto custom-scrollbar bg-[#0f172a]">
-                        <h4 className="font-bold text-white mb-4 text-sm uppercase sticky top-0 bg-[#0f172a] py-2 z-10">Lista de Envio</h4>
+                        <h4 className="font-bold text-white mb-4 text-xs md:text-sm uppercase sticky top-0 bg-[#0f172a] py-2 z-10">Lista de Envio</h4>
                         <div className="space-y-3">
                             {selectedElders.map(elder => (
                                 <div key={elder.id} className="bg-white/5 border border-white/5 rounded-lg p-3 flex flex-col gap-3">
@@ -129,7 +129,7 @@ const ElderWhatsAppModal: React.FC<ElderWhatsAppModalProps> = ({ isOpen, onClose
                                         {/* Botão Idoso */}
                                         <button 
                                             onClick={() => handleSend(elder, 'ELDER')}
-                                            className={`flex-1 py-1.5 rounded text-xs font-bold flex items-center justify-center gap-2 transition-all ${sentIds.has(`${elder.id}_ELDER`) ? 'bg-transparent border border-green-500 text-green-500 opacity-50' : 'bg-green-600 hover:bg-green-500 text-white'}`}
+                                            className={`flex-1 py-2 rounded text-xs font-bold flex items-center justify-center gap-2 transition-all ${sentIds.has(`${elder.id}_ELDER`) ? 'bg-transparent border border-green-500 text-green-500 opacity-50' : 'bg-green-600 hover:bg-green-500 text-white'}`}
                                         >
                                             {sentIds.has(`${elder.id}_ELDER`) ? 'Enviado' : 'Enviar p/ Idoso'}
                                         </button>
@@ -138,12 +138,12 @@ const ElderWhatsAppModal: React.FC<ElderWhatsAppModalProps> = ({ isOpen, onClose
                                         {elder.telefone_responsavel ? (
                                              <button 
                                                 onClick={() => handleSend(elder, 'RESP')}
-                                                className={`flex-1 py-1.5 rounded text-xs font-bold flex items-center justify-center gap-2 transition-all ${sentIds.has(`${elder.id}_RESP`) ? 'bg-transparent border border-blue-500 text-blue-500 opacity-50' : 'bg-blue-600 hover:bg-blue-500 text-white'}`}
+                                                className={`flex-1 py-2 rounded text-xs font-bold flex items-center justify-center gap-2 transition-all ${sentIds.has(`${elder.id}_RESP`) ? 'bg-transparent border border-blue-500 text-blue-500 opacity-50' : 'bg-blue-600 hover:bg-blue-500 text-white'}`}
                                             >
                                                 {sentIds.has(`${elder.id}_RESP`) ? 'Enviado' : `Enviar p/ Resp.`}
                                             </button>
                                         ) : (
-                                            <button disabled className="flex-1 py-1.5 rounded text-xs font-bold bg-gray-700 text-gray-500 cursor-not-allowed">
+                                            <button disabled className="flex-1 py-2 rounded text-xs font-bold bg-gray-700 text-gray-500 cursor-not-allowed">
                                                 Sem Resp.
                                             </button>
                                         )}
@@ -408,6 +408,19 @@ export const EldersModule: React.FC<EldersModuleProps> = ({ currentUser, serverU
     } catch(e) { console.error(e); }
   };
 
+  // --- ACTIONS: SHARE EVENT ---
+  const handleShareEvent = (ev: Evento) => {
+      const text = `*PASTORAL FAMILIAR - CONVITE* ✝️\n\n` +
+                   `📅 *Evento:* ${ev.titulo}\n` +
+                   `🗓️ *Data:* ${new Date(ev.data_inicio).toLocaleString('pt-BR')}\n` +
+                   `📍 *Local:* ${ev.local_nome}\n` +
+                   (ev.local_endereco ? `🗺️ *Endereço:* ${ev.local_endereco}\n` : '') +
+                   `\nContamos com sua presença!`;
+      
+      const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+      window.open(url, '_blank');
+  };
+
   // --- DUPLICATE EVENT LOGIC ---
   const openDuplicateModal = (event: Evento) => {
       setEventToDuplicate(event);
@@ -645,19 +658,19 @@ export const EldersModule: React.FC<EldersModuleProps> = ({ currentUser, serverU
       />
 
       {/* Header */}
-      <div className="h-16 bg-[#1f2937] border-b border-gray-700 flex items-center justify-between px-6 shrink-0 shadow-sm">
-         <div className="flex items-center gap-3">
+      <div className="h-16 bg-[#1f2937] border-b border-gray-700 flex items-center justify-between px-4 md:px-6 shrink-0 shadow-sm">
+         <div className="flex items-center gap-2 md:gap-3">
              <button onClick={onBack} className="p-2 rounded-full hover:bg-white/10 text-blue-300 transition-all">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
+                <svg className="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
              </button>
-             <h1 className="text-xl font-bold text-white">Missa da Saúde</h1>
+             <h1 className="text-lg md:text-xl font-bold text-white">Missa da Saúde</h1>
          </div>
          <div className="flex gap-2">
             {Object.entries(TABS).map(([key, label]) => (
                 <button
                     key={key}
                     onClick={() => setActiveTab(key as any)}
-                    className={`px-4 py-2 text-sm font-bold rounded-lg transition-colors ${activeTab === key ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-white/10'}`}
+                    className={`px-3 py-1.5 md:px-4 md:py-2 text-xs md:text-sm font-bold rounded-lg transition-colors ${activeTab === key ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-white/5'}`}
                 >
                     {label}
                 </button>
@@ -665,68 +678,70 @@ export const EldersModule: React.FC<EldersModuleProps> = ({ currentUser, serverU
          </div>
       </div>
 
-      <div className="flex-1 overflow-hidden p-6 relative">
+      <div className="flex-1 overflow-hidden p-4 md:p-6 relative">
         
         {/* --- TAB: ELDERS --- */}
         {activeTab === 'ELDERS' && (
            <div className="h-full flex flex-col">
-              <div className="flex justify-between mb-4 items-center gap-4">
-                  <div className="flex items-center gap-4">
-                      <h2 className="text-lg font-bold text-white">Assistidos ({assistidos.length})</h2>
-                      <div className="flex items-center gap-2 text-sm text-gray-400 border-l border-gray-700 pl-4">
-                        <input type="checkbox" onChange={handleSelectAllElders} checked={selectedElderIds.size > 0 && selectedElderIds.size === assistidos.length} />
-                        Todos
+              <div className="flex flex-col md:flex-row justify-between mb-4 items-center gap-4">
+                  <div className="flex items-center gap-4 w-full md:w-auto justify-between">
+                      <div className="flex items-center gap-4">
+                        <h2 className="text-lg font-bold text-white">Assistidos ({assistidos.length})</h2>
+                        <div className="flex items-center gap-2 text-sm text-gray-400 border-l border-gray-700 pl-4">
+                            <input type="checkbox" onChange={handleSelectAllElders} checked={selectedElderIds.size > 0 && selectedElderIds.size === assistidos.length} />
+                            Todos
+                        </div>
                       </div>
                   </div>
                   
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
                       {selectedElderIds.size > 0 && (
-                          <button onClick={() => setShowWhatsApp(true)} className="px-3 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg font-bold shadow text-sm flex items-center gap-2 animate-fade-in">
+                          <button onClick={() => setShowWhatsApp(true)} className="px-3 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg font-bold shadow text-xs md:text-sm flex items-center gap-2 animate-fade-in whitespace-nowrap">
                               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
-                              Disparo WhatsApp ({selectedElderIds.size})
+                              Zap ({selectedElderIds.size})
                           </button>
                       )}
                       
-                      <button onClick={handlePrintGeneralList} className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg shadow font-bold flex items-center gap-2">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
-                        Imprimir Lista Geral
+                      <button onClick={handlePrintGeneralList} className="px-3 py-2 md:px-4 bg-slate-700 hover:bg-slate-600 text-white rounded-lg shadow font-bold flex items-center gap-2 text-xs md:text-sm whitespace-nowrap">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+                        Imprimir
                       </button>
 
-                      <button onClick={() => { setEditingElder(null); setElderForm(initialElderForm()); setShowElderModal(true); }} className="px-4 py-2 bg-green-600 text-white rounded-lg shadow hover:bg-green-500 font-bold flex items-center gap-2">
+                      <button onClick={() => { setEditingElder(null); setElderForm(initialElderForm()); setShowElderModal(true); }} className="px-3 py-2 md:px-4 bg-green-600 text-white rounded-lg shadow hover:bg-green-500 font-bold flex items-center gap-2 text-xs md:text-sm whitespace-nowrap">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg> 
-                        Novo Assistido
+                        Novo
                       </button>
                   </div>
               </div>
               <div className="flex-1 overflow-y-auto custom-scrollbar bg-[#1f2937] rounded-xl border border-gray-700">
-                  <table className="w-full text-left text-sm">
+                  <table className="w-full text-left text-xs md:text-sm">
                       <thead className="bg-[#374151] text-gray-300 border-b border-gray-600">
                           <tr>
-                              <th className="p-4 w-10">
+                              <th className="p-2 md:p-4 w-10">
                                   <input type="checkbox" onChange={handleSelectAllElders} checked={selectedElderIds.size > 0 && selectedElderIds.size === assistidos.length} />
                               </th>
-                              <th className="p-4">Foto</th>
-                              <th className="p-4">Nome</th>
-                              <th className="p-4">Responsável</th>
-                              <th className="p-4">Bairro</th>
-                              <th className="p-4">Telefone</th>
-                              <th className="p-4 text-center">Cadeirante</th>
-                              <th className="p-4 text-center">Ações</th>
+                              <th className="p-2 md:p-4">Foto</th>
+                              <th className="p-2 md:p-4">Nome</th>
+                              <th className="hidden md:table-cell p-4">Responsável</th>
+                              <th className="hidden md:table-cell p-4">Bairro</th>
+                              <th className="p-2 md:p-4">Telefone</th>
+                              <th className="p-2 md:p-4 text-center">Cadeira</th>
+                              <th className="p-2 md:p-4 text-center">Ações</th>
                           </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-700">
                           {assistidos.map(a => (
                               <tr key={a.id} className={`hover:bg-white/5 transition-colors ${selectedElderIds.has(a.id!) ? 'bg-blue-900/10' : ''}`}>
-                                  <td className="p-4">
+                                  <td className="p-2 md:p-4">
                                       <input type="checkbox" checked={selectedElderIds.has(a.id!)} onChange={() => handleToggleSelectElder(a.id!)} />
                                   </td>
-                                  <td className="p-4">
-                                      <div className="w-10 h-10 rounded-full bg-gray-600 overflow-hidden border border-gray-500">
-                                          {a.foto ? <img src={a.foto} className="w-full h-full object-cover"/> : <div className="w-full h-full flex items-center justify-center text-xs">Sem Foto</div>}
+                                  <td className="p-2 md:p-4">
+                                      <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-gray-600 overflow-hidden border border-gray-500">
+                                          {a.foto ? <img src={a.foto} className="w-full h-full object-cover"/> : <div className="w-full h-full flex items-center justify-center text-[8px] md:text-xs">Foto</div>}
                                       </div>
                                   </td>
-                                  <td className="p-4 font-medium">{a.nome_completo}</td>
-                                  <td className="p-4">
+                                  <td className="p-2 md:p-4 font-medium max-w-[120px] truncate md:max-w-none">{a.nome_completo}</td>
+                                  <td className="hidden md:table-cell p-4">
                                       {a.responsavel_nome ? (
                                         <div className="text-xs">
                                             <p className="font-bold text-gray-300">{a.responsavel_nome}</p>
@@ -734,15 +749,17 @@ export const EldersModule: React.FC<EldersModuleProps> = ({ currentUser, serverU
                                         </div>
                                       ) : <span className="text-gray-600">-</span>}
                                   </td>
-                                  <td className="p-4">{a.endereco_bairro}</td>
-                                  <td className="p-4 text-gray-400">{formatPhone(a.telefone_principal)}</td>
-                                  <td className="p-4 text-center">{a.usa_cadeira_rodas ? '♿' : '-'}</td>
-                                  <td className="p-4 text-center flex justify-center gap-2">
-                                      <button onClick={() => openGoogleMaps(a)} className="text-green-400 hover:text-white" title="Abrir GPS">
-                                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                                      </button>
-                                      <button onClick={() => { setEditingElder(a); setElderForm(a); setShowElderModal(true); }} className="text-blue-400 hover:text-white" title="Editar">✏️</button>
-                                      <button onClick={() => deleteElder(a.id!)} className="text-red-400 hover:text-white" title="Excluir">🗑️</button>
+                                  <td className="hidden md:table-cell p-4">{a.endereco_bairro}</td>
+                                  <td className="p-2 md:p-4 text-gray-400 text-xs">{formatPhone(a.telefone_principal)}</td>
+                                  <td className="p-2 md:p-4 text-center">{a.usa_cadeira_rodas ? '♿' : '-'}</td>
+                                  <td className="p-2 md:p-4 text-center">
+                                      <div className="flex justify-center gap-2">
+                                        <button onClick={() => openGoogleMaps(a)} className="text-green-400 hover:text-white" title="Abrir GPS">
+                                            <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                                        </button>
+                                        <button onClick={() => { setEditingElder(a); setElderForm(a); setShowElderModal(true); }} className="text-blue-400 hover:text-white" title="Editar">✏️</button>
+                                        <button onClick={() => deleteElder(a.id!)} className="text-red-400 hover:text-white" title="Excluir">🗑️</button>
+                                      </div>
                                   </td>
                               </tr>
                           ))}
@@ -757,29 +774,35 @@ export const EldersModule: React.FC<EldersModuleProps> = ({ currentUser, serverU
            <div className="h-full flex flex-col">
               <div className="flex justify-between mb-4 items-center">
                   <h2 className="text-lg font-bold text-white">Eventos Agendados</h2>
-                  <button onClick={() => { setEditingEvent(null); setEventForm(initialEventForm()); setShowEventModal(true); }} className="px-4 py-2 bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-500 font-bold flex items-center gap-2">
-                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg> Agendar novo Evento
+                  <button onClick={() => { setEditingEvent(null); setEventForm(initialEventForm()); setShowEventModal(true); }} className="px-3 py-2 md:px-4 bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-500 font-bold flex items-center gap-2 text-xs md:text-sm">
+                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg> Novo Evento
                   </button>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 overflow-y-auto custom-scrollbar pb-20">
                   {eventos.map(ev => {
                       const status = getEventStatus(ev.ativo, ev.data_inicio);
                       return (
-                        <div key={ev.id} className="bg-[#1f2937] border border-gray-700 rounded-xl p-6 relative group hover:border-indigo-500 transition-all">
+                        <div key={ev.id} className="bg-[#1f2937] border border-gray-700 rounded-xl p-4 md:p-6 relative group hover:border-indigo-500 transition-all">
                             <div className="flex justify-between items-start mb-4">
-                                <div className="p-3 bg-indigo-900/30 rounded-lg text-indigo-300">
-                                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                                <div className="p-2 md:p-3 bg-indigo-900/30 rounded-lg text-indigo-300">
+                                    <svg className="w-6 h-6 md:w-8 md:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                                 </div>
-                                <span className={`px-3 py-1 rounded-full text-xs font-bold shadow-sm ${status.color} flex items-center gap-1`}>
+                                <span className={`px-2 py-1 md:px-3 rounded-full text-[10px] md:text-xs font-bold shadow-sm ${status.color} flex items-center gap-1`}>
                                     <span>{status.icon}</span> {status.label}
                                 </span>
                             </div>
-                            <h3 className="text-xl font-bold text-white mb-2">{ev.titulo}</h3>
-                            <p className="text-sm text-gray-400 mb-4">{new Date(ev.data_inicio).toLocaleString()}</p>
-                            <p className="text-sm text-gray-300 mb-2">📍 {ev.local_nome}</p>
+                            <h3 className="text-lg md:text-xl font-bold text-white mb-1">{ev.titulo}</h3>
+                            <p className="text-xs md:text-sm text-gray-400 mb-3">{new Date(ev.data_inicio).toLocaleString()}</p>
+                            <p className="text-xs md:text-sm text-gray-300 mb-2 flex items-center gap-1">📍 {ev.local_nome}</p>
                             
                             <div className="flex gap-2 mt-4 pt-4 border-t border-gray-700">
-                                <button onClick={() => { setEditingEvent(ev); setEventForm(ev); setShowEventModal(true); }} className="flex-1 py-2 bg-slate-700 hover:bg-slate-600 rounded text-sm font-bold">Editar</button>
+                                <button onClick={() => { setEditingEvent(ev); setEventForm(ev); setShowEventModal(true); }} className="flex-1 py-2 bg-slate-700 hover:bg-slate-600 rounded text-xs md:text-sm font-bold">Editar</button>
+                                
+                                {/* WhatsApp Share Button */}
+                                <button onClick={() => handleShareEvent(ev)} className="px-3 py-2 bg-green-600 hover:bg-green-500 rounded text-white" title="Compartilhar no WhatsApp">
+                                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
+                                </button>
+
                                 <button onClick={() => openDuplicateModal(ev)} className="px-3 py-2 bg-yellow-600 hover:bg-yellow-500 rounded text-white" title="Duplicar Evento (Copia Escalas)">
                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" /></svg>
                                 </button>
@@ -797,10 +820,10 @@ export const EldersModule: React.FC<EldersModuleProps> = ({ currentUser, serverU
            <div className="h-full flex flex-col gap-4">
               {/* Toolbar */}
               <div className="flex flex-col md:flex-row items-center justify-between bg-[#1f2937] p-4 rounded-xl border border-gray-700 gap-4">
-                  <div className="flex items-center gap-3 w-full md:w-auto">
-                      <label className="text-sm font-bold text-gray-400">Selecione o Evento:</label>
+                  <div className="flex flex-col w-full md:w-auto gap-1">
+                      <label className="text-xs font-bold text-gray-400">Selecione o Evento:</label>
                       <select 
-                          className="bg-black/30 border border-gray-600 rounded px-3 py-2 text-white text-sm focus:border-blue-500 flex-1"
+                          className="bg-black/30 border border-gray-600 rounded px-3 py-2 text-white text-sm focus:border-blue-500 w-full md:w-64"
                           onChange={(e) => loadEscalas(Number(e.target.value))}
                           value={selectedEventId || ''}
                       >
@@ -809,24 +832,24 @@ export const EldersModule: React.FC<EldersModuleProps> = ({ currentUser, serverU
                       </select>
                   </div>
                   {selectedEventId && (
-                      <div className="flex gap-3">
-                          <button onClick={handleAutoMatch} className="px-4 py-2 bg-yellow-600 hover:bg-yellow-500 text-white rounded font-bold text-sm shadow flex items-center gap-2">
+                      <div className="flex gap-2 w-full md:w-auto">
+                          <button onClick={handleAutoMatch} className="flex-1 md:flex-none px-3 py-2 bg-yellow-600 hover:bg-yellow-500 text-white rounded font-bold text-xs md:text-sm shadow flex items-center justify-center gap-2">
                              ⚡ Alocação Automática
                           </button>
-                          <button onClick={handlePrintAllManifests} className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded font-bold text-sm shadow flex items-center gap-2">
-                             🖨️ Imprimir Todos os Roteiros
+                          <button onClick={handlePrintAllManifests} className="flex-1 md:flex-none px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded font-bold text-xs md:text-sm shadow flex items-center justify-center gap-2">
+                             🖨️ Roteiros
                           </button>
                       </div>
                   )}
               </div>
 
               {selectedEventId ? (
-                <div className="flex-1 flex flex-col md:flex-row gap-6 min-h-0">
+                <div className="flex-1 flex flex-col md:flex-row gap-6 min-h-0 overflow-y-auto">
                     {/* Left: Unassigned Elders */}
-                    <div className="w-full md:w-1/4 bg-[#1f2937] rounded-xl border border-gray-700 flex flex-col">
+                    <div className="w-full md:w-1/4 bg-[#1f2937] rounded-xl border border-gray-700 flex flex-col shrink-0 h-48 md:h-auto">
                         <div className="p-3 border-b border-gray-700 bg-gray-800/50 rounded-t-xl">
-                            <h3 className="font-bold text-gray-300">Não Alocados</h3>
-                            <p className="text-xs text-gray-500">Arraste para um motorista</p>
+                            <h3 className="font-bold text-gray-300 text-sm">Não Alocados</h3>
+                            <p className="text-[10px] text-gray-500">Arraste para um motorista</p>
                         </div>
                         <div className="flex-1 overflow-y-auto p-2 space-y-2 custom-scrollbar">
                             {assistidos.filter(a => a.ativo && !escalas.find(e => String(e.assistido_id) === String(a.id))).map(elder => (
@@ -834,13 +857,13 @@ export const EldersModule: React.FC<EldersModuleProps> = ({ currentUser, serverU
                                     key={elder.id} 
                                     draggable
                                     onDragStart={() => setDraggedElderId(elder.id!)}
-                                    className="p-3 bg-slate-800 border border-gray-600 rounded cursor-grab active:cursor-grabbing hover:border-blue-500 transition-colors shadow-sm"
+                                    className="p-2 md:p-3 bg-slate-800 border border-gray-600 rounded cursor-grab active:cursor-grabbing hover:border-blue-500 transition-colors shadow-sm"
                                 >
                                     <div className="flex justify-between">
-                                        <p className="text-sm font-bold text-white">{elder.nome_completo}</p>
+                                        <p className="text-xs md:text-sm font-bold text-white">{elder.nome_completo}</p>
                                         {elder.usa_cadeira_rodas && <span className="text-xs" title="Cadeirante">♿</span>}
                                     </div>
-                                    <p className="text-xs text-gray-400">{elder.endereco_bairro}</p>
+                                    <p className="text-[10px] text-gray-400">{elder.endereco_bairro}</p>
                                 </div>
                             ))}
                             {assistidos.filter(a => a.ativo && !escalas.find(e => String(e.assistido_id) === String(a.id))).length === 0 && (
@@ -850,12 +873,12 @@ export const EldersModule: React.FC<EldersModuleProps> = ({ currentUser, serverU
                     </div>
 
                     {/* Right: Drivers & Allocation */}
-                    <div className="flex-1 bg-[#1f2937] rounded-xl border border-gray-700 flex flex-col">
+                    <div className="flex-1 bg-[#1f2937] rounded-xl border border-gray-700 flex flex-col min-h-0">
                          <div className="p-3 border-b border-gray-700 bg-gray-800/50 rounded-t-xl flex justify-between">
-                            <h3 className="font-bold text-gray-300">Frota Disponível (Motoristas)</h3>
-                            <span className="text-xs text-blue-400">Total Viagens: {escalas.length}</span>
+                            <h3 className="font-bold text-gray-300 text-sm">Frota Disponível</h3>
+                            <span className="text-xs text-blue-400">Viagens: {escalas.length}</span>
                         </div>
-                        <div className="flex-1 overflow-y-auto p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 custom-scrollbar">
+                        <div className="flex-1 overflow-y-auto p-2 md:p-4 grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-4 custom-scrollbar">
                             {drivers.map(driver => {
                                 const driverEscalas = escalas.filter(e => String(e.motorista_id) === String(driver.id));
                                 return (
@@ -870,8 +893,8 @@ export const EldersModule: React.FC<EldersModuleProps> = ({ currentUser, serverU
                                                 {driver.nome_completo.charAt(0)}
                                             </div>
                                             <div className="flex-1 min-w-0">
-                                                <p className="font-bold text-sm text-white truncate">{driver.nome_completo}</p>
-                                                <p className="text-xs text-gray-400 truncate">{driver.modelo_veiculo || 'Veículo N/D'}</p>
+                                                <p className="font-bold text-xs md:text-sm text-white truncate">{driver.nome_completo}</p>
+                                                <p className="text-[10px] text-gray-400 truncate">{driver.modelo_veiculo || 'Veículo N/D'}</p>
                                             </div>
                                             <button onClick={() => handlePrintManifest(driver.id!)} className="text-gray-400 hover:text-white" title="Imprimir Roteiro Individual">🖨️</button>
                                         </div>
@@ -883,9 +906,9 @@ export const EldersModule: React.FC<EldersModuleProps> = ({ currentUser, serverU
                                                 return (
                                                     <div key={esc.id || pass.id} className="bg-black/30 p-2 rounded text-xs flex flex-col gap-1 relative group">
                                                         <div className="flex justify-between items-center">
-                                                            <div className="flex items-center gap-1">
-                                                                <span className="font-bold text-gray-200">{pass.nome_completo} {pass.usa_cadeira_rodas && '♿'}</span>
-                                                                <button onClick={() => openGoogleMaps(pass)} className="text-green-400 hover:text-green-300" title="GPS Rota">
+                                                            <div className="flex items-center gap-1 overflow-hidden">
+                                                                <span className="font-bold text-gray-200 truncate">{pass.nome_completo} {pass.usa_cadeira_rodas && '♿'}</span>
+                                                                <button onClick={() => openGoogleMaps(pass)} className="text-green-400 hover:text-green-300 shrink-0" title="GPS Rota">
                                                                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                                                                 </button>
                                                             </div>
@@ -901,7 +924,7 @@ export const EldersModule: React.FC<EldersModuleProps> = ({ currentUser, serverU
                                                             <select 
                                                                 value={esc.tipo}
                                                                 onChange={(e) => updateEscalaTipo(pass.id!, e.target.value)}
-                                                                className="bg-slate-700 text-[10px] rounded px-1 border-0 focus:ring-1 focus:ring-blue-500"
+                                                                className="bg-slate-700 text-[9px] md:text-[10px] rounded px-1 border-0 focus:ring-1 focus:ring-blue-500 w-16"
                                                             >
                                                                 <option value="Ambos">Ida/Volta</option>
                                                                 <option value="Ida">Só Ida</option>
@@ -910,7 +933,7 @@ export const EldersModule: React.FC<EldersModuleProps> = ({ currentUser, serverU
                                                             <select 
                                                                 value={esc.status}
                                                                 onChange={(e) => updateEscalaStatus(pass.id!, e.target.value)}
-                                                                className={`flex-1 text-[10px] rounded px-1 border-0 focus:ring-1 ${esc.status === 'Confirmada' ? 'bg-green-900 text-green-300' : 'bg-slate-700'}`}
+                                                                className={`flex-1 text-[9px] md:text-[10px] rounded px-1 border-0 focus:ring-1 ${esc.status === 'Confirmada' ? 'bg-green-900 text-green-300' : 'bg-slate-700'}`}
                                                             >
                                                                 <option value="Planejada">Planejada</option>
                                                                 <option value="Confirmada">Confirmada</option>
@@ -941,11 +964,11 @@ export const EldersModule: React.FC<EldersModuleProps> = ({ currentUser, serverU
       {/* MODAL: ASSISTIDO */}
       {showElderModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-              <div className="bg-[#1f2937] border border-gray-600 rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto custom-scrollbar p-6 shadow-2xl">
-                  <h2 className="text-xl font-bold text-white mb-6 border-b border-gray-700 pb-2">{editingElder ? 'Editar Assistido' : 'Novo Assistido'}</h2>
+              <div className="bg-[#1f2937] border border-gray-600 rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto custom-scrollbar p-4 md:p-6 shadow-2xl">
+                  <h2 className="text-lg md:text-xl font-bold text-white mb-6 border-b border-gray-700 pb-2">{editingElder ? 'Editar Assistido' : 'Novo Assistido'}</h2>
                   <div className="space-y-4">
                       <div className="flex gap-4 items-start">
-                          <div className="w-24 h-24 bg-gray-700 rounded-lg flex-shrink-0 relative overflow-hidden group border border-gray-600">
+                          <div className="w-20 h-20 md:w-24 md:h-24 bg-gray-700 rounded-lg flex-shrink-0 relative overflow-hidden group border border-gray-600">
                               {elderForm.foto ? (
                                   <img src={elderForm.foto} className="w-full h-full object-cover"/>
                               ) : (
@@ -955,18 +978,18 @@ export const EldersModule: React.FC<EldersModuleProps> = ({ currentUser, serverU
                               {compressingPhoto && <div className="absolute inset-0 bg-black/50 flex items-center justify-center text-[10px] text-white">...</div>}
                           </div>
                           <div className="flex-1 space-y-4">
-                             <input type="text" placeholder="Nome Completo" value={elderForm.nome_completo} onChange={e => setElderForm({...elderForm, nome_completo: e.target.value})} className="w-full p-2 bg-black/20 border border-gray-600 rounded text-white" />
-                             <input type="date" placeholder="Data Nasc (YYYY-MM-DD)" value={elderForm.data_nascimento || ''} onChange={e => setElderForm({...elderForm, data_nascimento: e.target.value})} className="w-full p-2 bg-black/20 border border-gray-600 rounded text-white" />
+                             <input type="text" placeholder="Nome Completo" value={elderForm.nome_completo} onChange={e => setElderForm({...elderForm, nome_completo: e.target.value})} className="w-full p-2 bg-black/20 border border-gray-600 rounded text-white text-sm" />
+                             <input type="date" placeholder="Data Nasc (YYYY-MM-DD)" value={elderForm.data_nascimento || ''} onChange={e => setElderForm({...elderForm, data_nascimento: e.target.value})} className="w-full p-2 bg-black/20 border border-gray-600 rounded text-white text-sm" />
                           </div>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-4">
-                          <input type="text" placeholder="Nome Responsável" value={elderForm.responsavel_nome || ''} onChange={e => setElderForm({...elderForm, responsavel_nome: e.target.value})} className="p-2 bg-black/20 border border-gray-600 rounded text-white" />
-                          <input type="text" placeholder="Tel. Responsável" value={elderForm.telefone_responsavel || ''} onChange={e => setElderForm({...elderForm, telefone_responsavel: e.target.value})} className="p-2 bg-black/20 border border-gray-600 rounded text-white" />
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <input type="text" placeholder="Nome Responsável" value={elderForm.responsavel_nome || ''} onChange={e => setElderForm({...elderForm, responsavel_nome: e.target.value})} className="p-2 bg-black/20 border border-gray-600 rounded text-white text-sm" />
+                          <input type="text" placeholder="Tel. Responsável" value={elderForm.telefone_responsavel || ''} onChange={e => setElderForm({...elderForm, telefone_responsavel: e.target.value})} className="p-2 bg-black/20 border border-gray-600 rounded text-white text-sm" />
                       </div>
                       
-                      <div className="grid grid-cols-2 gap-4">
-                          <input type="text" placeholder="Telefone Principal" value={elderForm.telefone_principal} onChange={e => setElderForm({...elderForm, telefone_principal: e.target.value})} className="p-2 bg-black/20 border border-gray-600 rounded text-white" />
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <input type="text" placeholder="Telefone Principal" value={elderForm.telefone_principal} onChange={e => setElderForm({...elderForm, telefone_principal: e.target.value})} className="p-2 bg-black/20 border border-gray-600 rounded text-white text-sm" />
                           <div className="relative">
                             <input 
                                 type="text" 
@@ -976,31 +999,31 @@ export const EldersModule: React.FC<EldersModuleProps> = ({ currentUser, serverU
                                     setElderForm({...elderForm, endereco_cep: e.target.value});
                                     if(e.target.value.replace(/\D/g,'').length === 8) fetchCep(e.target.value);
                                 }} 
-                                className="w-full p-2 bg-black/20 border border-gray-600 rounded text-white pr-8" 
+                                className="w-full p-2 bg-black/20 border border-gray-600 rounded text-white pr-8 text-sm" 
                             />
                             {cepLoading && <div className="absolute right-2 top-2.5 w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>}
                           </div>
                       </div>
                       
-                      <input type="text" placeholder="Logradouro" value={elderForm.endereco_logradouro} onChange={e => setElderForm({...elderForm, endereco_logradouro: e.target.value})} className="w-full p-2 bg-black/20 border border-gray-600 rounded text-white" disabled={cepLoading} />
+                      <input type="text" placeholder="Logradouro" value={elderForm.endereco_logradouro} onChange={e => setElderForm({...elderForm, endereco_logradouro: e.target.value})} className="w-full p-2 bg-black/20 border border-gray-600 rounded text-white text-sm" disabled={cepLoading} />
                       
                       <div className="grid grid-cols-3 gap-4">
-                          <input type="text" placeholder="Número" value={elderForm.endereco_numero} onChange={e => setElderForm({...elderForm, endereco_numero: e.target.value})} className="p-2 bg-black/20 border border-gray-600 rounded text-white" />
-                          <input type="text" placeholder="Bairro" value={elderForm.endereco_bairro} onChange={e => setElderForm({...elderForm, endereco_bairro: e.target.value})} className="p-2 bg-black/20 border border-gray-600 rounded text-white" disabled={cepLoading} />
-                          <input type="text" placeholder="Cidade" value={elderForm.endereco_cidade} onChange={e => setElderForm({...elderForm, endereco_cidade: e.target.value})} className="p-2 bg-black/20 border border-gray-600 rounded text-white" disabled={cepLoading} />
+                          <input type="text" placeholder="Número" value={elderForm.endereco_numero} onChange={e => setElderForm({...elderForm, endereco_numero: e.target.value})} className="p-2 bg-black/20 border border-gray-600 rounded text-white text-sm" />
+                          <input type="text" placeholder="Bairro" value={elderForm.endereco_bairro} onChange={e => setElderForm({...elderForm, endereco_bairro: e.target.value})} className="p-2 bg-black/20 border border-gray-600 rounded text-white text-sm" disabled={cepLoading} />
+                          <input type="text" placeholder="Cidade" value={elderForm.endereco_cidade} onChange={e => setElderForm({...elderForm, endereco_cidade: e.target.value})} className="p-2 bg-black/20 border border-gray-600 rounded text-white text-sm" disabled={cepLoading} />
                       </div>
                       
-                      <input type="text" placeholder="Ponto de Referência" value={elderForm.ponto_referencia || ''} onChange={e => setElderForm({...elderForm, ponto_referencia: e.target.value})} className="w-full p-2 bg-black/20 border border-gray-600 rounded text-white" />
-                      <textarea placeholder="Necessidades Especiais" value={elderForm.necessidades_especiais || ''} onChange={e => setElderForm({...elderForm, necessidades_especiais: e.target.value})} className="w-full p-2 bg-black/20 border border-gray-600 rounded text-white h-20"></textarea>
+                      <input type="text" placeholder="Ponto de Referência" value={elderForm.ponto_referencia || ''} onChange={e => setElderForm({...elderForm, ponto_referencia: e.target.value})} className="w-full p-2 bg-black/20 border border-gray-600 rounded text-white text-sm" />
+                      <textarea placeholder="Necessidades Especiais" value={elderForm.necessidades_especiais || ''} onChange={e => setElderForm({...elderForm, necessidades_especiais: e.target.value})} className="w-full p-2 bg-black/20 border border-gray-600 rounded text-white h-20 text-sm"></textarea>
                       
-                      <label className="flex items-center gap-2 text-white">
+                      <label className="flex items-center gap-2 text-white text-sm">
                           <input type="checkbox" checked={elderForm.usa_cadeira_rodas} onChange={e => setElderForm({...elderForm, usa_cadeira_rodas: e.target.checked})} className="w-5 h-5 rounded bg-gray-700 border-gray-600" />
                           Usa Cadeira de Rodas?
                       </label>
                   </div>
                   <div className="flex justify-end gap-3 mt-6">
-                      <button onClick={() => setShowElderModal(false)} className="px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-600">Cancelar</button>
-                      <button onClick={saveElder} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 font-bold">Salvar</button>
+                      <button onClick={() => setShowElderModal(false)} className="px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-600 text-sm">Cancelar</button>
+                      <button onClick={saveElder} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 font-bold text-sm">Salvar</button>
                   </div>
               </div>
           </div>

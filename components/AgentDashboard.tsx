@@ -292,51 +292,51 @@ export const AgentDashboard: React.FC<AgentDashboardProps> = ({ currentUser, ser
       />
 
       {/* Top Navbar */}
-      <div className="h-16 bg-[#1f2937] border-b border-gray-700 flex items-center justify-between px-6 shrink-0">
-         <div className="flex items-center gap-3">
+      <div className="h-16 bg-[#1f2937] border-b border-gray-700 flex items-center justify-between px-4 md:px-6 shrink-0">
+         <div className="flex items-center gap-2 md:gap-3">
              <div className="w-8 h-8 rounded-full bg-white p-0.5 overflow-hidden">
                 <img src="https://swufojxuemmouglmlptu.supabase.co/storage/v1/object/public/logos/1763492095165.png" className="w-full h-full object-contain" alt="Logo" loading="lazy" />
              </div>
              <div>
-                 <h1 className="text-lg font-bold text-white leading-tight">Pastoral Familiar</h1>
-                 <p className="text-[10px] text-gray-400 uppercase tracking-wider">Cadastro Paroquial</p>
+                 <h1 className="text-base md:text-lg font-bold text-white leading-tight">Pastoral Familiar</h1>
+                 <p className="text-[9px] md:text-[10px] text-gray-400 uppercase tracking-wider">Cadastro Paroquial</p>
              </div>
          </div>
 
-         <div className="flex items-center gap-6 text-sm">
+         <div className="flex items-center gap-4 text-sm">
              <div className="hidden md:block text-right">
                  <span className="block text-gray-300">Olá, <strong>{currentUser.nome_completo.split(' ')[0]}</strong>!</span>
                  <span className="text-[10px] text-blue-400 bg-blue-900/30 px-2 py-0.5 rounded border border-blue-800">{currentUser.funcao || 'Usuário'}</span>
              </div>
              
-             <div className="flex items-center gap-4 border-l border-gray-600 pl-6">
+             <div className="flex items-center gap-2 md:gap-4 border-l border-gray-600 pl-4 md:pl-6">
                  
                  {/* New Module Button */}
-                 <button onClick={() => onNavigate(ViewState.ELDERS_MODULE)} className="flex items-center gap-2 text-indigo-400 font-medium hover:text-indigo-300 transition-colors bg-indigo-900/20 px-3 py-1.5 rounded-lg border border-indigo-500/30">
+                 <button onClick={() => onNavigate(ViewState.ELDERS_MODULE)} className="flex items-center gap-2 text-indigo-400 font-medium hover:text-indigo-300 transition-colors bg-indigo-900/20 px-2 py-1.5 md:px-3 rounded-lg border border-indigo-500/30 text-xs md:text-sm whitespace-nowrap">
                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
-                     Missa da Saúde
+                     <span className="hidden md:inline">Missa da </span>Saúde
                  </button>
 
                  <button onClick={fetchAgents} className="flex items-center gap-2 text-yellow-500 font-medium hover:text-yellow-400 transition-colors" title="Atualizar">
-                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                     <svg className="w-5 h-5 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
                  </button>
 
                  {canViewReports && (
                     <button onClick={() => onNavigate(ViewState.REPORTS)} className="flex items-center gap-2 text-blue-400 font-medium hover:text-blue-300 transition-colors">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
-                        Relatórios
+                        <svg className="w-5 h-5 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+                        <span className="hidden md:inline">Relatórios</span>
                     </button>
                  )}
 
                  <button onClick={onLogout} className="flex items-center gap-2 text-orange-400 hover:text-orange-300 transition-colors ml-2" title="Sair">
-                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                     <svg className="w-5 h-5 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
                  </button>
              </div>
          </div>
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-y-auto p-6 bg-[#111827]">
+      <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-[#111827]">
           
           {/* Filters Bar */}
           <div className="bg-[#1f2937] rounded-xl border border-gray-700 p-4 mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -392,8 +392,8 @@ export const AgentDashboard: React.FC<AgentDashboardProps> = ({ currentUser, ser
 
           {/* Action Bar */}
           <div className="flex flex-col md:flex-row items-center justify-between mb-6 gap-4">
-              <div className="flex items-center gap-4">
-                <h2 className="text-2xl font-bold text-white">Agentes ({filteredAgents.length})</h2>
+              <div className="flex items-center gap-4 w-full md:w-auto justify-between">
+                <h2 className="text-xl md:text-2xl font-bold text-white">Agentes ({filteredAgents.length})</h2>
                 {!isRestrictedView && (
                     <div className="flex items-center gap-2">
                         <input 
@@ -402,15 +402,15 @@ export const AgentDashboard: React.FC<AgentDashboardProps> = ({ currentUser, ser
                             onChange={handleSelectAll}
                             className="w-4 h-4 rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-blue-500"
                         />
-                        <span className="text-sm text-gray-400">Selecionar Todos</span>
+                        <span className="text-xs md:text-sm text-gray-400">Todos</span>
                     </div>
                 )}
               </div>
               
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 md:gap-3 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
                   {selectedIds.size > 0 && (
-                      <div className="flex items-center gap-2 bg-blue-900/30 border border-blue-500/30 rounded-lg px-3 py-1 animate-fade-in mr-2">
-                          <span className="text-xs text-blue-200 font-bold">{selectedIds.size} selecionado(s)</span>
+                      <div className="flex items-center gap-2 bg-blue-900/30 border border-blue-500/30 rounded-lg px-2 md:px-3 py-1 animate-fade-in mr-2 whitespace-nowrap">
+                          <span className="text-xs text-blue-200 font-bold">{selectedIds.size} sel.</span>
                           <button 
                             onClick={() => setShowWhatsApp(true)}
                             className="p-1.5 bg-green-600 hover:bg-green-500 text-white rounded shadow"
@@ -426,7 +426,7 @@ export const AgentDashboard: React.FC<AgentDashboardProps> = ({ currentUser, ser
                         <button 
                             onClick={handleExportPhotos} 
                             disabled={isExporting}
-                            className={`px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-sm font-bold flex items-center gap-2 border border-purple-800 shadow-lg shadow-purple-900/20 ${isExporting ? 'opacity-50 cursor-not-allowed' : ''}`} 
+                            className={`px-3 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-xs md:text-sm font-bold flex items-center gap-2 border border-purple-800 shadow-lg shadow-purple-900/20 whitespace-nowrap ${isExporting ? 'opacity-50 cursor-not-allowed' : ''}`} 
                             title="Baixar todas as fotos (ZIP)"
                         >
                             {isExporting ? (
@@ -434,15 +434,15 @@ export const AgentDashboard: React.FC<AgentDashboardProps> = ({ currentUser, ser
                             ) : (
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                             )}
-                            {isExporting ? 'Gerando...' : 'Fotos ZIP'}
+                            <span className="hidden md:inline">Fotos ZIP</span>
                         </button>
 
-                        <button onClick={handleExportCSV} className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-sm font-bold flex items-center gap-2 border border-gray-600">
+                        <button onClick={handleExportCSV} className="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-xs md:text-sm font-bold flex items-center gap-2 border border-gray-600 whitespace-nowrap">
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                            Exportar CSV
+                            <span className="hidden md:inline">CSV</span>
                         </button>
 
-                        <button onClick={() => onNavigate(ViewState.REGISTER)} className="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-bold flex items-center gap-2 shadow-lg shadow-blue-900/20">
+                        <button onClick={() => onNavigate(ViewState.REGISTER)} className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs md:text-sm font-bold flex items-center gap-2 shadow-lg shadow-blue-900/20 whitespace-nowrap">
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>
                             Novo
                         </button>
@@ -465,7 +465,7 @@ export const AgentDashboard: React.FC<AgentDashboardProps> = ({ currentUser, ser
                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
                </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-20">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 pb-20">
                 {filteredAgents.length === 0 && (
                     <div className="col-span-full text-center text-gray-500 py-10">
                         Nenhum agente encontrado.
@@ -475,7 +475,7 @@ export const AgentDashboard: React.FC<AgentDashboardProps> = ({ currentUser, ser
                 {filteredAgents.map(agent => (
                     <div 
                         key={agent.id} 
-                        className={`bg-[#1f2937] border rounded-xl p-6 relative group transition-all duration-300 ${
+                        className={`bg-[#1f2937] border rounded-xl p-4 md:p-6 relative group transition-all duration-300 ${
                             editingId === agent.id 
                             ? 'border-blue-500 shadow-[0_0_30px_rgba(59,130,246,0.5)] scale-[1.03] z-20 ring-2 ring-blue-400'
                             : selectedIds.has(agent.id!) 
@@ -496,22 +496,22 @@ export const AgentDashboard: React.FC<AgentDashboardProps> = ({ currentUser, ser
                         )}
 
                         <div className="flex gap-4 mb-4">
-                            <div className="w-16 h-16 rounded-full bg-gray-700 flex-shrink-0 overflow-hidden border border-gray-600">
+                            <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-gray-700 flex-shrink-0 overflow-hidden border border-gray-600">
                                 {agent.foto ? (
                                     <img src={agent.foto} className="w-full h-full object-cover" loading="lazy" />
                                 ) : (
                                     <div className="w-full h-full flex items-center justify-center text-gray-500">
-                                        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                                        <svg className="w-6 h-6 md:w-8 md:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
                                     </div>
                                 )}
                             </div>
                             <div className="pr-6">
-                                <h3 className="font-bold text-lg text-white leading-tight">{agent.nome_completo}</h3>
-                                <span className="text-yellow-500 text-sm font-medium">{agent.funcao}</span>
+                                <h3 className="font-bold text-base md:text-lg text-white leading-tight">{agent.nome_completo}</h3>
+                                <span className="text-yellow-500 text-xs md:text-sm font-medium">{agent.funcao}</span>
                             </div>
                         </div>
 
-                        <div className="space-y-2 text-sm text-gray-400 mb-8">
+                        <div className="space-y-1.5 md:space-y-2 text-xs md:text-sm text-gray-400 mb-8">
                             <div className="flex items-center gap-2">
                                 <svg className="w-4 h-4 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
                                 {agent.setor}
