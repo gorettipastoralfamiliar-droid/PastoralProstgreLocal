@@ -314,7 +314,7 @@ export const AgentDashboard: React.FC<AgentDashboardProps> = ({ currentUser, ser
                  {/* New Module Button */}
                  <button onClick={() => onNavigate(ViewState.ELDERS_MODULE)} className="flex items-center gap-2 text-indigo-400 font-medium hover:text-indigo-300 transition-colors bg-indigo-900/20 px-3 py-1.5 rounded-lg border border-indigo-500/30">
                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
-                     Missa Idosos
+                     Missa da Saúde
                  </button>
 
                  <button onClick={fetchAgents} className="flex items-center gap-2 text-yellow-500 font-medium hover:text-yellow-400 transition-colors" title="Atualizar">

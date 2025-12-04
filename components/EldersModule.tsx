@@ -17,6 +17,27 @@ const TABS = {
   TRANSPORT: 'Transporte & Alocação'
 };
 
+// --- HELPER STATUS LOGIC ---
+const getEventStatus = (ativo: boolean, dateStr: string) => {
+    if (!dateStr) return { label: 'DATA INVÁLIDA', color: 'bg-gray-600', icon: '?' };
+    
+    const eventDate = new Date(dateStr);
+    const now = new Date();
+    
+    // 1. Prioridade: Se a data já passou -> CONCLUÍDO (Independente se está ativo ou não)
+    if (eventDate < now) {
+        return { label: 'CONCLUÍDO', color: 'bg-gray-600 text-gray-300 border border-gray-500', icon: '🏁' };
+    }
+    
+    // 2. Se data futura e marcado como ativo -> ATIVO
+    if (ativo) {
+        return { label: 'ATIVO', color: 'bg-green-600 text-white shadow-lg shadow-green-900/50', icon: '🟢' };
+    }
+    
+    // 3. Se data futura e desmarcado -> AGENDADO
+    return { label: 'AGENDADO', color: 'bg-blue-600 text-white shadow-lg shadow-blue-900/50', icon: '📅' };
+};
+
 // --- SUB-COMPONENT: ELDER WHATSAPP MODAL ---
 interface ElderWhatsAppModalProps {
     isOpen: boolean;
@@ -25,8 +46,8 @@ interface ElderWhatsAppModalProps {
 }
 
 const ElderWhatsAppModal: React.FC<ElderWhatsAppModalProps> = ({ isOpen, onClose, selectedElders }) => {
-    const [messageElder, setMessageElder] = useState('Olá {nome}, a Paz de Cristo! Lembramos da nossa Missa dos Idosos no dia...');
-    const [messageResp, setMessageResp] = useState('Olá {responsavel}, sou da Pastoral Familiar. Gostaria de confirmar a presença do(a) {nome} na Missa dos Idosos.');
+    const [messageElder, setMessageElder] = useState('Olá {nome}, a Paz de Cristo! Lembramos da nossa Missa da Saúde no dia...');
+    const [messageResp, setMessageResp] = useState('Olá {responsavel}, sou da Pastoral Familiar. Gostaria de confirmar a presença do(a) {nome} na Missa da Saúde.');
     const [sentIds, setSentIds] = useState<Set<string>>(new Set()); // id_tipo (ex: 1_elder, 1_resp)
 
     if (!isOpen) return null;
@@ -163,10 +184,15 @@ export const EldersModule: React.FC<EldersModuleProps> = ({ currentUser, serverU
   const [selectedElderIds, setSelectedElderIds] = useState<Set<number>>(new Set());
   const [showWhatsApp, setShowWhatsApp] = useState(false);
 
-  // --- TAB: EVENTS (CRUD) ---
+  // --- TAB: EVENTS (CRUD & DUPLICATION) ---
   const [showEventModal, setShowEventModal] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Evento | null>(null);
   const [eventForm, setEventForm] = useState<Evento>(initialEventForm());
+  
+  // Duplication State
+  const [duplicateModalOpen, setDuplicateModalOpen] = useState(false);
+  const [eventToDuplicate, setEventToDuplicate] = useState<Evento | null>(null);
+  const [newDuplicateDate, setNewDuplicateDate] = useState('');
 
   // --- TAB: TRANSPORT ---
   const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
@@ -183,7 +209,7 @@ export const EldersModule: React.FC<EldersModuleProps> = ({ currentUser, serverU
 
   function initialEventForm(): Evento {
     return {
-      titulo: 'Missa dos Idosos',
+      titulo: 'Missa da Saúde',
       data_inicio: new Date().toISOString().slice(0, 16),
       local_nome: 'Paróquia Santa Maria Goretti',
       local_endereco: '',
@@ -297,6 +323,14 @@ export const EldersModule: React.FC<EldersModuleProps> = ({ currentUser, serverU
       else setSelectedElderIds(new Set(assistidos.map(a => a.id!)));
   };
 
+  // --- ACTIONS: MAPS ---
+  const openGoogleMaps = (elder: Assistido) => {
+      const fullAddress = `${elder.endereco_logradouro}, ${elder.endereco_numero} - ${elder.endereco_bairro}, ${elder.endereco_cidade}`;
+      const encoded = encodeURIComponent(fullAddress);
+      // Opens Google Maps in Directions mode from current location
+      window.open(`https://www.google.com/maps/dir/?api=1&destination=${encoded}`, '_blank');
+  };
+
   const handlePrintGeneralList = () => {
       const html = `
         <html>
@@ -372,6 +406,38 @@ export const EldersModule: React.FC<EldersModuleProps> = ({ currentUser, serverU
         addLog('success', 'Evento excluído');
         fetchData();
     } catch(e) { console.error(e); }
+  };
+
+  // --- DUPLICATE EVENT LOGIC ---
+  const openDuplicateModal = (event: Evento) => {
+      setEventToDuplicate(event);
+      setNewDuplicateDate('');
+      setDuplicateModalOpen(true);
+  };
+
+  const executeDuplicate = async () => {
+      if(!eventToDuplicate || !newDuplicateDate) return alert('Selecione uma data para o novo evento.');
+      
+      try {
+          addLog('info', 'Duplicando evento e escalas...');
+          const res = await fetch(`${API_URL}/api/eventos/${eventToDuplicate.id}/duplicate`, {
+              method: 'POST',
+              headers,
+              body: JSON.stringify({ new_date: newDuplicateDate })
+          });
+          
+          if(res.ok) {
+              addLog('success', 'Evento duplicado com sucesso!');
+              setDuplicateModalOpen(false);
+              fetchData();
+          } else {
+              const err = await res.json();
+              throw new Error(err.error || 'Erro ao duplicar');
+          }
+      } catch(e) {
+          addLog('error', 'Falha na duplicação', String(e));
+          alert('Erro ao duplicar evento. Verifique se a Stored Procedure foi criada no banco (Veja Configuração do Servidor).');
+      }
   };
 
   // --- ACTIONS: TRANSPORT ---
@@ -584,14 +650,14 @@ export const EldersModule: React.FC<EldersModuleProps> = ({ currentUser, serverU
              <button onClick={onBack} className="p-2 rounded-full hover:bg-white/10 text-blue-300 transition-all">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
              </button>
-             <h1 className="text-xl font-bold text-white">Missa dos Idosos</h1>
+             <h1 className="text-xl font-bold text-white">Missa da Saúde</h1>
          </div>
          <div className="flex gap-2">
             {Object.entries(TABS).map(([key, label]) => (
                 <button
                     key={key}
                     onClick={() => setActiveTab(key as any)}
-                    className={`px-4 py-2 text-sm font-bold rounded-lg transition-colors ${activeTab === key ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-white/5'}`}
+                    className={`px-4 py-2 text-sm font-bold rounded-lg transition-colors ${activeTab === key ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-white/10'}`}
                 >
                     {label}
                 </button>
@@ -622,7 +688,7 @@ export const EldersModule: React.FC<EldersModuleProps> = ({ currentUser, serverU
                       )}
                       
                       <button onClick={handlePrintGeneralList} className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg shadow font-bold flex items-center gap-2">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
                         Imprimir Lista Geral
                       </button>
 
@@ -672,8 +738,11 @@ export const EldersModule: React.FC<EldersModuleProps> = ({ currentUser, serverU
                                   <td className="p-4 text-gray-400">{formatPhone(a.telefone_principal)}</td>
                                   <td className="p-4 text-center">{a.usa_cadeira_rodas ? '♿' : '-'}</td>
                                   <td className="p-4 text-center flex justify-center gap-2">
-                                      <button onClick={() => { setEditingElder(a); setElderForm(a); setShowElderModal(true); }} className="text-blue-400 hover:text-white">✏️</button>
-                                      <button onClick={() => deleteElder(a.id!)} className="text-red-400 hover:text-white">🗑️</button>
+                                      <button onClick={() => openGoogleMaps(a)} className="text-green-400 hover:text-white" title="Abrir GPS">
+                                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                                      </button>
+                                      <button onClick={() => { setEditingElder(a); setElderForm(a); setShowElderModal(true); }} className="text-blue-400 hover:text-white" title="Editar">✏️</button>
+                                      <button onClick={() => deleteElder(a.id!)} className="text-red-400 hover:text-white" title="Excluir">🗑️</button>
                                   </td>
                               </tr>
                           ))}
@@ -693,26 +762,32 @@ export const EldersModule: React.FC<EldersModuleProps> = ({ currentUser, serverU
                   </button>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 overflow-y-auto custom-scrollbar pb-20">
-                  {eventos.map(ev => (
-                      <div key={ev.id} className="bg-[#1f2937] border border-gray-700 rounded-xl p-6 relative group hover:border-indigo-500 transition-all">
-                          <div className="flex justify-between items-start mb-4">
-                              <div className="p-3 bg-indigo-900/30 rounded-lg text-indigo-300">
-                                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                              </div>
-                              <span className={`px-2 py-1 rounded text-xs font-bold ${ev.ativo ? 'bg-green-900/30 text-green-400' : 'bg-red-900/30 text-red-400'}`}>
-                                  {ev.ativo ? 'Ativo' : 'Concluído'}
-                              </span>
-                          </div>
-                          <h3 className="text-xl font-bold text-white mb-2">{ev.titulo}</h3>
-                          <p className="text-sm text-gray-400 mb-4">{new Date(ev.data_inicio).toLocaleString()}</p>
-                          <p className="text-sm text-gray-300 mb-2">📍 {ev.local_nome}</p>
-                          
-                          <div className="flex gap-2 mt-4 pt-4 border-t border-gray-700">
-                              <button onClick={() => { setEditingEvent(ev); setEventForm(ev); setShowEventModal(true); }} className="flex-1 py-2 bg-slate-700 hover:bg-slate-600 rounded text-sm font-bold">Editar</button>
-                              <button onClick={() => deleteEvent(ev.id!)} className="px-3 py-2 bg-red-900/30 text-red-400 hover:bg-red-900/50 rounded">🗑️</button>
-                          </div>
-                      </div>
-                  ))}
+                  {eventos.map(ev => {
+                      const status = getEventStatus(ev.ativo, ev.data_inicio);
+                      return (
+                        <div key={ev.id} className="bg-[#1f2937] border border-gray-700 rounded-xl p-6 relative group hover:border-indigo-500 transition-all">
+                            <div className="flex justify-between items-start mb-4">
+                                <div className="p-3 bg-indigo-900/30 rounded-lg text-indigo-300">
+                                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                                </div>
+                                <span className={`px-3 py-1 rounded-full text-xs font-bold shadow-sm ${status.color} flex items-center gap-1`}>
+                                    <span>{status.icon}</span> {status.label}
+                                </span>
+                            </div>
+                            <h3 className="text-xl font-bold text-white mb-2">{ev.titulo}</h3>
+                            <p className="text-sm text-gray-400 mb-4">{new Date(ev.data_inicio).toLocaleString()}</p>
+                            <p className="text-sm text-gray-300 mb-2">📍 {ev.local_nome}</p>
+                            
+                            <div className="flex gap-2 mt-4 pt-4 border-t border-gray-700">
+                                <button onClick={() => { setEditingEvent(ev); setEventForm(ev); setShowEventModal(true); }} className="flex-1 py-2 bg-slate-700 hover:bg-slate-600 rounded text-sm font-bold">Editar</button>
+                                <button onClick={() => openDuplicateModal(ev)} className="px-3 py-2 bg-yellow-600 hover:bg-yellow-500 rounded text-white" title="Duplicar Evento (Copia Escalas)">
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" /></svg>
+                                </button>
+                                <button onClick={() => deleteEvent(ev.id!)} className="px-3 py-2 bg-red-900/30 text-red-400 hover:bg-red-900/50 rounded">🗑️</button>
+                            </div>
+                        </div>
+                      );
+                  })}
               </div>
            </div>
         )}
@@ -808,7 +883,12 @@ export const EldersModule: React.FC<EldersModuleProps> = ({ currentUser, serverU
                                                 return (
                                                     <div key={esc.id || pass.id} className="bg-black/30 p-2 rounded text-xs flex flex-col gap-1 relative group">
                                                         <div className="flex justify-between items-center">
-                                                            <span className="font-bold text-gray-200">{pass.nome_completo} {pass.usa_cadeira_rodas && '♿'}</span>
+                                                            <div className="flex items-center gap-1">
+                                                                <span className="font-bold text-gray-200">{pass.nome_completo} {pass.usa_cadeira_rodas && '♿'}</span>
+                                                                <button onClick={() => openGoogleMaps(pass)} className="text-green-400 hover:text-green-300" title="GPS Rota">
+                                                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                                                                </button>
+                                                            </div>
                                                             <button 
                                                                 onClick={() => onUnassignElder(pass.id!)}
                                                                 className="text-red-500 hover:text-red-300 font-bold px-1"
@@ -936,16 +1016,65 @@ export const EldersModule: React.FC<EldersModuleProps> = ({ currentUser, serverU
                       <input type="datetime-local" value={eventForm.data_inicio} onChange={e => setEventForm({...eventForm, data_inicio: e.target.value})} className="w-full p-2 bg-black/20 border border-gray-600 rounded text-white" />
                       <input type="text" placeholder="Nome do Local" value={eventForm.local_nome} onChange={e => setEventForm({...eventForm, local_nome: e.target.value})} className="w-full p-2 bg-black/20 border border-gray-600 rounded text-white" />
                       <input type="text" placeholder="Endereço Local" value={eventForm.local_endereco || ''} onChange={e => setEventForm({...eventForm, local_endereco: e.target.value})} className="w-full p-2 bg-black/20 border border-gray-600 rounded text-white" />
-                      <label className="flex items-center gap-2 text-white">
-                          <input type="checkbox" checked={eventForm.ativo} onChange={e => setEventForm({...eventForm, ativo: e.target.checked})} className="w-5 h-5 rounded bg-gray-700 border-gray-600" />
-                          Evento Ativo?
-                      </label>
+                      
+                      {/* STATUS CONTROL PANEL */}
+                      <div className="bg-black/20 p-3 rounded-lg border border-white/10 flex items-center justify-between">
+                          <label className="flex items-center gap-3 text-white cursor-pointer select-none">
+                              <div className="relative">
+                                  <input type="checkbox" checked={eventForm.ativo} onChange={e => setEventForm({...eventForm, ativo: e.target.checked})} className="sr-only peer" />
+                                  <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                              </div>
+                              <span className="text-sm font-medium">Evento Ativo (Principal)</span>
+                          </label>
+                          
+                          {/* Calculated Status Badge */}
+                          {(() => {
+                              const status = getEventStatus(eventForm.ativo, eventForm.data_inicio);
+                              return (
+                                  <div className={`px-3 py-1 rounded text-xs font-bold ${status.color} flex items-center gap-1`}>
+                                      {status.icon} {status.label}
+                                  </div>
+                              )
+                          })()}
+                      </div>
+                      
                   </div>
                   <div className="flex justify-end gap-3 mt-6">
                       <button onClick={() => setShowEventModal(false)} className="px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-600">Cancelar</button>
                       <button onClick={saveEvent} className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-500 font-bold">Salvar</button>
                   </div>
               </div>
+          </div>
+      )}
+
+      {/* MODAL: DUPLICAÇÃO DE EVENTO */}
+      {duplicateModalOpen && eventToDuplicate && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
+              <GlassCard className="w-full max-w-sm border-yellow-500/30">
+                  <h2 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
+                      <svg className="w-6 h-6 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" /></svg>
+                      Duplicar Evento
+                  </h2>
+                  <p className="text-sm text-gray-300 mb-6">
+                      Você está duplicando <strong>"{eventToDuplicate.titulo}"</strong>. 
+                      Isso criará uma cópia com todas as escalas e passageiros, mas com status <em>Inativo</em> e <em>Planejado</em>.
+                  </p>
+                  
+                  <div className="mb-6">
+                      <label className="text-xs font-bold text-yellow-500 block mb-1">DATA E HORA DO NOVO EVENTO</label>
+                      <input 
+                          type="datetime-local" 
+                          value={newDuplicateDate}
+                          onChange={(e) => setNewDuplicateDate(e.target.value)}
+                          className="w-full bg-black/40 border border-white/20 rounded-lg px-3 py-3 text-white focus:border-yellow-500 outline-none"
+                      />
+                  </div>
+
+                  <div className="flex gap-3">
+                      <button onClick={() => setDuplicateModalOpen(false)} className="flex-1 py-2 bg-slate-700 hover:bg-slate-600 rounded text-white font-bold">Cancelar</button>
+                      <button onClick={executeDuplicate} className="flex-1 py-2 bg-yellow-600 hover:bg-yellow-500 rounded text-white font-bold">Confirmar</button>
+                  </div>
+              </GlassCard>
           </div>
       )}
 
