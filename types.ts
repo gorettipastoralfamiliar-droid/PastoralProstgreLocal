@@ -5,7 +5,8 @@ export enum ViewState {
   SERVER_SETUP = 'SERVER_SETUP',
   AI_GENERATOR = 'AI_GENERATOR',
   DASHBOARD = 'DASHBOARD',
-  REPORTS = 'REPORTS'
+  REPORTS = 'REPORTS',
+  ELDERS_MODULE = 'ELDERS_MODULE'
 }
 
 export interface Member {
@@ -32,6 +33,44 @@ export interface Member {
   funcao: string;
   data_ingresso: string;
   observacoes?: string;
+}
+
+export interface Assistido {
+  id?: number;
+  foto?: string; // Base64
+  nome_completo: string;
+  data_nascimento?: string;
+  responsavel_nome?: string;
+  telefone_principal: string;
+  telefone_responsavel?: string;
+  endereco_logradouro: string;
+  endereco_numero: string;
+  endereco_bairro: string;
+  endereco_cidade: string;
+  endereco_cep: string;
+  ponto_referencia?: string;
+  necessidades_especiais?: string;
+  usa_cadeira_rodas: boolean;
+  ativo: boolean;
+}
+
+export interface Evento {
+  id?: number;
+  titulo: string;
+  descricao?: string;
+  data_inicio: string; // ISO datetime
+  local_nome: string;
+  local_endereco: string;
+  ativo: boolean;
+}
+
+export interface Escala {
+  id?: number;
+  evento_id: number;
+  motorista_id: number; // Link to Member
+  assistido_id: number; // Link to Assistido
+  status: 'Planejada' | 'Confirmada' | 'Concluida' | 'Cancelada';
+  tipo: 'Ida' | 'Volta' | 'Ambos';
 }
 
 export interface GeneratedCode {

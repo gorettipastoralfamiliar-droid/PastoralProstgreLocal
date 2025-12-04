@@ -182,7 +182,6 @@ export const AgentDashboard: React.FC<AgentDashboardProps> = ({ currentUser, ser
       addLog('info', 'Iniciando ZIP...', `Processando ${agentsToExport.length} fotos.`);
 
       try {
-        // Garantia de importação do JSZip em diferentes ambientes (ESM/CommonJS)
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const ZipClass = (JSZip as any).default || JSZip;
         const zip = new ZipClass();
@@ -190,74 +189,46 @@ export const AgentDashboard: React.FC<AgentDashboardProps> = ({ currentUser, ser
 
         let count = 0;
 
-        // Processamento em Loop
         for (const agent of agentsToExport) {
             if (!agent.foto) continue;
-            
             try {
-                // Sanitização do nome do arquivo
                 const firstName = agent.nome_completo.split(' ')[0].trim().replace(/[^a-z0-9]/gi, '_');
                 const safeName = `${agent.id}_${firstName}`;
 
-                // LÓGICA 1: Verifica se é Base64 Data URI (formato padrão do app)
                 if (agent.foto.includes('base64,')) {
                     const parts = agent.foto.split(',');
-                    
                     if (parts.length === 2) {
                         const base64Data = parts[1];
                         const mimeType = parts[0].split(':')[1].split(';')[0];
-                        
-                        let extension = 'jpg'; // Default
+                        let extension = 'jpg';
                         if (mimeType.includes('png')) extension = 'png';
                         else if (mimeType.includes('gif')) extension = 'gif';
                         else if (mimeType.includes('jpeg') || mimeType.includes('jpg')) extension = 'jpg';
-
                         folder?.file(`${safeName}.${extension}`, base64Data, { base64: true });
                         count++;
                     }
                 } 
-                // LÓGICA 2: Verifica se é uma URL (http/https)
                 else if (agent.foto.startsWith('http')) {
                     try {
-                        // Tenta baixar a imagem
-                        const response = await fetch(agent.foto, { 
-                            mode: 'cors',
-                            cache: 'no-cache'
-                        });
-                        
+                        const response = await fetch(agent.foto, { mode: 'cors', cache: 'no-cache' });
                         if (response.ok) {
                             const blob = await response.blob();
-                            // Determina extensão pelo Blob type
                             let ext = 'jpg';
                             if (blob.type === 'image/png') ext = 'png';
                             else if (blob.type === 'image/gif') ext = 'gif';
-                            
                             folder?.file(`${safeName}.${ext}`, blob);
                             count++;
-                        } else {
-                            console.warn(`Falha ao baixar URL para ${agent.nome_completo}: ${response.status}`);
-                            addLog('warning', `Foto ignorada: ${firstName}`, `Erro ${response.status} ao baixar URL.`);
                         }
                     } catch (fetchErr) {
-                         // Erro comum: Failed to fetch (CORS ou Mixed Content)
                          console.error(`Erro de rede na foto de ${agent.nome_completo}`, fetchErr);
-                         addLog('warning', `Foto ignorada: ${firstName}`, "Bloqueio de CORS ou Erro de Rede.");
                     }
                 }
-                // LÓGICA 3: Base64 pura sem cabeçalho (fallback)
-                else if (agent.foto.length > 100) {
-                     // Assume JPEG
-                     folder?.file(`${safeName}.jpg`, agent.foto, { base64: true });
-                     count++;
-                }
-
             } catch (e) {
-                console.error("Erro ao processar imagem do agente:", agent.nome_completo, e);
+                console.error("Erro ao processar imagem:", e);
             }
         }
 
         if (count > 0) {
-            addLog('info', 'Comprimindo...', 'Gerando arquivo final.');
             const content = await zip.generateAsync({ type: "blob" });
             const url = URL.createObjectURL(content);
             const link = document.createElement('a');
@@ -270,14 +241,10 @@ export const AgentDashboard: React.FC<AgentDashboardProps> = ({ currentUser, ser
             URL.revokeObjectURL(url);
             addLog('success', 'ZIP Criado com Sucesso', `${count} fotos exportadas.`);
         } else {
-            addLog('warning', 'Nenhuma foto válida processada', 'Verifique se as imagens não estão corrompidas ou inacessíveis.');
-            alert("Nenhuma foto válida encontrada para exportação. Verifique o console/log.");
+            alert("Nenhuma foto válida encontrada.");
         }
-
       } catch (error) {
-          console.error("Erro fatal ZIP:", error);
           addLog('error', 'Erro ao criar ZIP', String(error));
-          alert("Erro crítico ao gerar ZIP.");
       } finally {
           setIsExporting(false);
       }
@@ -343,6 +310,13 @@ export const AgentDashboard: React.FC<AgentDashboardProps> = ({ currentUser, ser
              </div>
              
              <div className="flex items-center gap-4 border-l border-gray-600 pl-6">
+                 
+                 {/* New Module Button */}
+                 <button onClick={() => onNavigate(ViewState.ELDERS_MODULE)} className="flex items-center gap-2 text-indigo-400 font-medium hover:text-indigo-300 transition-colors bg-indigo-900/20 px-3 py-1.5 rounded-lg border border-indigo-500/30">
+                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+                     Missa Idosos
+                 </button>
+
                  <button onClick={fetchAgents} className="flex items-center gap-2 text-yellow-500 font-medium hover:text-yellow-400 transition-colors" title="Atualizar">
                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
                  </button>
