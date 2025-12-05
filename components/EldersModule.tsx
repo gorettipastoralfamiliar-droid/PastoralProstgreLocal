@@ -703,7 +703,7 @@ export const EldersModule: React.FC<EldersModuleProps> = ({ currentUser, serverU
                       )}
                       
                       <button onClick={handlePrintGeneralList} className="px-3 py-2 md:px-4 bg-slate-700 hover:bg-slate-600 text-white rounded-lg shadow font-bold flex items-center gap-2 text-xs md:text-sm whitespace-nowrap">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
                         Imprimir
                       </button>
 
@@ -896,7 +896,9 @@ export const EldersModule: React.FC<EldersModuleProps> = ({ currentUser, serverU
                                                 <p className="font-bold text-xs md:text-sm text-white truncate">{driver.nome_completo}</p>
                                                 <p className="text-[10px] text-gray-400 truncate">{driver.modelo_veiculo || 'Veículo N/D'}</p>
                                             </div>
-                                            <button onClick={() => handlePrintManifest(driver.id!)} className="text-gray-400 hover:text-white" title="Imprimir Roteiro Individual">🖨️</button>
+                                            <button onClick={() => handlePrintManifest(driver.id!)} className="p-2 text-blue-400 hover:text-white bg-blue-500/10 hover:bg-blue-500/30 rounded-lg transition-colors" title="Imprimir Roteiro Individual">
+                                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+                                            </button>
                                         </div>
 
                                         <div className="space-y-1 min-h-[50px]">
@@ -908,16 +910,16 @@ export const EldersModule: React.FC<EldersModuleProps> = ({ currentUser, serverU
                                                         <div className="flex justify-between items-center">
                                                             <div className="flex items-center gap-1 overflow-hidden">
                                                                 <span className="font-bold text-gray-200 truncate">{pass.nome_completo} {pass.usa_cadeira_rodas && '♿'}</span>
-                                                                <button onClick={() => openGoogleMaps(pass)} className="text-green-400 hover:text-green-300 shrink-0" title="GPS Rota">
-                                                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                                                                <button onClick={() => openGoogleMaps(pass)} className="p-1.5 text-green-400 hover:text-green-300 bg-green-500/10 hover:bg-green-500/20 rounded-md shrink-0 transition-colors" title="GPS Rota">
+                                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                                                                 </button>
                                                             </div>
                                                             <button 
                                                                 onClick={() => onUnassignElder(pass.id!)}
-                                                                className="text-red-500 hover:text-red-300 font-bold px-1"
+                                                                className="p-1.5 text-red-500 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 rounded-md transition-colors"
                                                                 title="Remover Passageiro"
                                                             >
-                                                                ✕
+                                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
                                                             </button>
                                                         </div>
                                                         <div className="flex gap-1">
