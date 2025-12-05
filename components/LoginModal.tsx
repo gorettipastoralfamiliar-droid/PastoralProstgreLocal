@@ -44,10 +44,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onSucce
         body: JSON.stringify({ login: login.toUpperCase() }) // Force Upper
       });
 
-      // Verifica se a resposta é JSON antes de parsear
       const contentType = response.headers.get("content-type");
       if (!contentType || !contentType.includes("application/json")) {
-          // Se não for JSON, provavelmente é o HTML de erro do Ngrok (apesar do bypass) ou erro 500
           throw new Error("O servidor não retornou JSON. Verifique se a URL está correta ou se o backend foi atualizado.");
       }
 
@@ -102,38 +100,28 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onSucce
       const r = Math.random();
       
       if (r < 0.40) {
-        // ESTRATÉGIA 1: Variação Grande de Ano (Hard Mode)
-        // Varia entre -15 e +15 anos
         let yearOffset = Math.floor(Math.random() * 31) - 15;
         if (yearOffset === 0) yearOffset = 1;
         
         variant.setFullYear(variant.getFullYear() + yearOffset);
-        // Também muda o mês para não ficar óbvio se a pessoa souber só o dia
         variant.setMonth(Math.floor(Math.random() * 12));
       } 
       else if (r < 0.70) {
-        // ESTRATÉGIA 2: Mesmo Ano, Mês/Dia Diferente (Teste de memória exata)
-        // Mantém o ano, muda o mês e o dia drasticamente
         variant.setMonth(Math.floor(Math.random() * 12));
         variant.setDate(Math.floor(Math.random() * 28) + 1);
       } 
       else if (r < 0.85) {
-        // ESTRATÉGIA 3: Pegadinha da Década
-        // Soma ou Subtrai exatamente 10 ou 20 anos
         const decades = [-20, -10, 10, 20];
         const decadeOffset = decades[Math.floor(Math.random() * decades.length)];
         variant.setFullYear(variant.getFullYear() + decadeOffset);
       }
       else {
-        // ESTRATÉGIA 4: Variação Sutil (Perto da data)
-        // +/- 1 ou 2 anos apenas, mas muda o dia
         let smallOffset = Math.floor(Math.random() * 5) - 2; 
         if (smallOffset === 0) smallOffset = -1;
         variant.setFullYear(variant.getFullYear() + smallOffset);
         variant.setDate(variant.getDate() + (Math.random() > 0.5 ? 5 : -5));
       }
 
-      // Segurança: Se a data gerada for no futuro (ex: nasceu em 2026), volta para o passado
       if (variant > today) {
           variant.setFullYear(variant.getFullYear() - 20);
       }
@@ -144,13 +132,11 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onSucce
       }
     }
 
-    // Convert Set to Array and Shuffle utilizing Fisher-Yates for true randomness
     const finalOptions = Array.from(opts);
     shuffleArray(finalOptions);
     setOptions(finalOptions);
   };
 
-  // Algoritmo Fisher-Yates para embaralhamento real
   const shuffleArray = (array: string[]) => {
     for (let i = array.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -166,13 +152,45 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onSucce
     return `${d}/${m}/${y}`;
   };
 
-  const handleOptionClick = (option: string) => {
+  const handleOptionClick = async (option: string) => {
     if (option === correctAnswer) {
-      onSuccess(userData);
-      onClose();
+      setLoading(true); // Re-usa loading para feedback visual
+      
+      // CRITICAL FIX: Fetch full profile to ensure 'possui_veiculo' is present
+      // O endpoint check-login antigo não retorna possui_veiculo, então buscamos tudo.
+      try {
+          const API_URL = serverUrl.replace(/\/$/, '');
+          const res = await fetch(`${API_URL}/api/membros`, {
+              mode: 'cors',
+              headers: { 
+                  'ngrok-skip-browser-warning': 'true',
+                  'Bypass-Tunnel-Reminder': 'true'
+              }
+          });
+          
+          if (res.ok) {
+              const allMembers = await res.json();
+              // Encontra o usuário atual na lista completa para ter todos os campos
+              const fullProfile = allMembers.find((m: any) => String(m.id) === String(userData.id));
+              
+              if (fullProfile) {
+                  onSuccess(fullProfile);
+              } else {
+                  onSuccess(userData); // Fallback
+              }
+          } else {
+               onSuccess(userData); // Fallback
+          }
+      } catch (error) {
+          console.error("Erro ao buscar perfil completo", error);
+          onSuccess(userData); // Fallback se der erro
+      } finally {
+          setLoading(false);
+          onClose();
+      }
+      
     } else {
       setError('Data incorreta. Tente novamente.');
-      // Delay reset to let user see error
       setTimeout(() => {
         onClose();
         setStep('LOGIN');
@@ -238,13 +256,15 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onSucce
                      <button
                         key={idx}
                         onClick={() => handleOptionClick(opt)}
-                        className="py-3 bg-white/5 hover:bg-blue-600/20 border border-white/10 hover:border-blue-500 rounded-lg text-white transition-all active:scale-95 font-medium"
+                        disabled={loading}
+                        className="py-3 bg-white/5 hover:bg-blue-600/20 border border-white/10 hover:border-blue-500 rounded-lg text-white transition-all active:scale-95 font-medium disabled:opacity-50"
                      >
                          {opt}
                      </button>
                  ))}
              </div>
              {error && <p className="text-xs text-red-400 text-center font-bold mt-2">{error}</p>}
+             {loading && <p className="text-xs text-blue-300 text-center animate-pulse mt-2">Carregando perfil...</p>}
           </div>
         )}
       </GlassCard>

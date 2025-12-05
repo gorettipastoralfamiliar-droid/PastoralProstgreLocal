@@ -178,7 +178,7 @@ $$ LANGUAGE plpgsql;
 `;
 
   const nodeCode = `
-// server.js - Versão 12 (Com Duplicação de Eventos)
+// server.js - Versão 13 (Com Login Motorista & Duplicação)
 // Instale: npm install express pg dotenv cors
 
 require('dotenv').config();
@@ -216,7 +216,7 @@ pool.connect((err) => {
 
 app.get('/', (req, res) => res.json({ message: 'API Pastoral Online ✝️', status: 'Running' }));
 
-// --- ROTAS MEMBROS (Resumidas) ---
+// --- ROTAS MEMBROS ---
 app.get('/api/membros', async (req, res) => {
   const r = await pool.query('SELECT * FROM membros ORDER BY created_at DESC');
   res.json(r.rows);
@@ -245,7 +245,8 @@ app.delete('/api/membros/:id', async (req, res) => {
     try { await pool.query('DELETE FROM membros WHERE id=$1', [req.params.id]); res.json({success: true}); } catch (e) { res.status(500).json({error: e.message}); }
 });
 app.post('/api/membros/check-login', async (req, res) => {
-  const r = await pool.query('SELECT id, funcao, nome_completo, estado_civil, data_nascimento, data_casamento FROM membros WHERE UPPER(login) = UPPER($1)', [req.body.login]);
+  // ATENÇÃO: Incluído 'possui_veiculo' para o módulo de transporte
+  const r = await pool.query('SELECT id, funcao, nome_completo, estado_civil, data_nascimento, data_casamento, possui_veiculo FROM membros WHERE UPPER(login) = UPPER($1)', [req.body.login]);
   res.json(r.rows.length > 0 ? { found: true, ...r.rows[0] } : { found: false });
 });
 

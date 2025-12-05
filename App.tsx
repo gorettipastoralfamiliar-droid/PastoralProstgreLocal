@@ -11,6 +11,7 @@ import { LoginModal } from './components/LoginModal';
 import { AgentDashboard } from './components/AgentDashboard';
 import { ReportsView } from './components/ReportsView';
 import { EldersModule } from './components/EldersModule';
+import { DriverTaskModal } from './components/DriverTaskModal';
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<ViewState>(ViewState.WELCOME);
@@ -25,6 +26,9 @@ const App: React.FC = () => {
   // Login Modal State
   const [showLogin, setShowLogin] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
+
+  // Driver Task Modal State
+  const [showDriverModal, setShowDriverModal] = useState(false);
 
   // State for Editing
   const [agentToEdit, setAgentToEdit] = useState<Member | null>(null);
@@ -80,6 +84,11 @@ const App: React.FC = () => {
     setShowLogin(false);
     setCurrentView(ViewState.DASHBOARD);
     addLog('success', 'Login Efetuado', `Usuário: ${user.nome_completo}`);
+    
+    // Verifica se é motorista e abre modal de tarefas
+    if (user.possui_veiculo) {
+        setTimeout(() => setShowDriverModal(true), 500);
+    }
   };
 
   const handleEditAgent = (agent: Member) => {
@@ -136,6 +145,7 @@ const App: React.FC = () => {
                     onNavigate={handleNavigation}
                     addLog={addLog}
                     onEdit={handleEditAgent}
+                    onOpenDriverModal={() => setShowDriverModal(true)}
                 />
             </div>
         );
@@ -224,6 +234,16 @@ const App: React.FC = () => {
          onSuccess={handleLoginSuccess}
          serverUrl={serverUrl}
        />
+
+       {/* Driver Task Notification Modal */}
+       {currentUser && (
+           <DriverTaskModal 
+                isOpen={showDriverModal}
+                onClose={() => setShowDriverModal(false)}
+                currentUser={currentUser}
+                serverUrl={serverUrl}
+           />
+       )}
     </div>
   );
 };

@@ -11,9 +11,10 @@ interface AgentDashboardProps {
   onNavigate: (view: ViewState) => void;
   addLog: (type: LogType, message: string, details?: string) => void;
   onEdit: (agent: Member) => void;
+  onOpenDriverModal: () => void;
 }
 
-export const AgentDashboard: React.FC<AgentDashboardProps> = ({ currentUser, serverUrl, onLogout, onNavigate, addLog, onEdit }) => {
+export const AgentDashboard: React.FC<AgentDashboardProps> = ({ currentUser, serverUrl, onLogout, onNavigate, addLog, onEdit, onOpenDriverModal }) => {
   const [agents, setAgents] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -316,6 +317,13 @@ export const AgentDashboard: React.FC<AgentDashboardProps> = ({ currentUser, ser
                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
                      <span className="hidden md:inline">Missa da </span>Saúde
                  </button>
+
+                 {currentUser.possui_veiculo && (
+                    <button onClick={onOpenDriverModal} className="flex items-center gap-2 text-blue-400 font-medium hover:text-blue-300 transition-colors bg-blue-900/20 px-2 py-1.5 md:px-3 rounded-lg border border-blue-500/30 text-xs md:text-sm whitespace-nowrap">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        Transporte
+                    </button>
+                 )}
 
                  <button onClick={fetchAgents} className="flex items-center gap-2 text-yellow-500 font-medium hover:text-yellow-400 transition-colors" title="Atualizar">
                      <svg className="w-5 h-5 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
