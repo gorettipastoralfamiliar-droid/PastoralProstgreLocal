@@ -252,7 +252,8 @@ export const AgentDashboard: React.FC<AgentDashboardProps> = ({ currentUser, ser
   };
 
   const filteredAgents = agents.filter(agent => {
-      if (isRestrictedView && agent.id && currentUser.id && agent.id !== String(currentUser.id) && agent.id !== Number(currentUser.id)) {
+      // Fix: Converting IDs to string to avoid "number !== string" type error in comparison
+      if (isRestrictedView && agent.id && currentUser.id && String(agent.id) !== String(currentUser.id)) {
           return false;
       }
       const matchSearch = agent.nome_completo.toLowerCase().includes(searchTerm.toLowerCase()) || 
